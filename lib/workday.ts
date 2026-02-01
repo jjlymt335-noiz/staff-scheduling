@@ -1,4 +1,5 @@
-import { isWorkday } from 'chinese-workday'
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { isWorkday } = require('chinese-workday') as { isWorkday: (day: string | Date) => boolean }
 
 /**
  * 计算从startDate开始，加上durationWorkdays个工作日后的日期
