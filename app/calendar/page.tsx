@@ -175,6 +175,13 @@ export default function CalendarPage() {
     )
   }
 
+  const formatTaskTitle = (task: Task) => {
+    if (task.type === 'IN_REQUIREMENT' && task.requirement) {
+      return `${task.requirement.title}-${task.title}`
+    }
+    return task.title
+  }
+
   const openTaskModal = (task: Task) => {
     let parsedLinks: Array<{ title: string; url: string }> = []
     if (task.links) {
@@ -501,10 +508,10 @@ export default function CalendarPage() {
                                     ? 'bg-blue-100 hover:bg-blue-200'
                                     : 'bg-green-100 hover:bg-green-200'
                                 }`}
-                                title={task.title}
+                                title={formatTaskTitle(task)}
                               >
                                 <div className="font-medium truncate">
-                                  {task.title}
+                                  {formatTaskTitle(task)}
                                 </div>
                                 <div className="text-gray-600 mt-1">
                                   优先级: {task.priority}
