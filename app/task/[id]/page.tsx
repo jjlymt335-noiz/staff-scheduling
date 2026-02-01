@@ -54,7 +54,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const { id: taskId } = React.use(params)
   const [task, setTask] = useState<Task | null>(null)
   const [loading, setLoading] = useState(true)
-  const [linksExpanded, setLinksExpanded] = useState(false)
+  const [linksExpanded, setLinksExpanded] = useState(true)
   const [editingLinks, setEditingLinks] = useState(false)
   const [links, setLinks] = useState<RelatedLink[]>([])
   const [newLinkTitle, setNewLinkTitle] = useState('')

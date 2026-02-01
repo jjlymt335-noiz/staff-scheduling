@@ -45,7 +45,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const { id: projectId } = React.use(params)
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
-  const [linksExpanded, setLinksExpanded] = useState(false)
+  const [linksExpanded, setLinksExpanded] = useState(true)
   const [editingLinks, setEditingLinks] = useState(false)
   const [links, setLinks] = useState<RelatedLink[]>([])
   const [newLinkTitle, setNewLinkTitle] = useState('')

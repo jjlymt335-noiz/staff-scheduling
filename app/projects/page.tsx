@@ -69,24 +69,6 @@ export default function ProjectsPage() {
   const [requirements, setRequirements] = useState<Requirement[]>([])
   const [tasks, setTasks] = useState<StandaloneTask[]>([])
   const [loading, setLoading] = useState(true)
-  const [showProjectForm, setShowProjectForm] = useState(false)
-  // 计算默认日期：今天 + 6周后
-  const getDefaultProjectDates = () => {
-    const today = new Date()
-    const sixWeeksLater = new Date(today)
-    sixWeeksLater.setDate(today.getDate() + 42) // 6周 = 42天
-    return {
-      startDate: today.toISOString().split('T')[0],
-      endDate: sixWeeksLater.toISOString().split('T')[0]
-    }
-  }
-
-  const [newProject, setNewProject] = useState({
-    title: '',
-    description: '',
-    priority: 0,
-    ...getDefaultProjectDates()
-  })
   const [selectedRequirement, setSelectedRequirement] = useState<{
     id: string
     title: string
@@ -107,11 +89,6 @@ export default function ProjectsPage() {
     endDate: ''
   })
   const [editingProject, setEditingProject] = useState<Project | null>(null)
-  const [collapsedSections, setCollapsedSections] = useState<{ projects: boolean; requirements: boolean; tasks: boolean }>({
-    projects: false,
-    requirements: false,
-    tasks: false,
-  })
 
   const roleOrder = ['MANAGEMENT', 'FRONTEND', 'BACKEND', 'PRODUCT', 'OPERATIONS', 'STRATEGY']
   const roleLabels: Record<string, string> = {
@@ -148,33 +125,6 @@ export default function ProjectsPage() {
     }
   }
 
-  const handleCreateProject = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      const response = await fetch('/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newProject)
-      })
-      if (response.ok) {
-        setShowProjectForm(false)
-        setNewProject({
-          title: '',
-          description: '',
-          priority: 0,
-          ...getDefaultProjectDates()
-        })
-        fetchData()
-        alert('项目创建成功！')
-      } else {
-        const error = await response.json()
-        alert('创建失败：' + error.error)
-      }
-    } catch (error) {
-      console.error('Failed to create project:', error)
-      alert('创建失败，请重试')
-    }
-  }
 
   const handleCreateRequirement = async (e: React.FormEvent, projectId: string) => {
     e.preventDefault()
@@ -595,128 +545,30 @@ export default function ProjectsPage() {
           </div>
         </div>
 
-        {/* 收起/展开切换按钮 */}
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setCollapsedSections(s => ({ ...s, projects: !s.projects }))}
-            className={`px-3 py-1.5 rounded text-sm border ${collapsedSections.projects ? 'bg-gray-200 text-gray-600' : 'bg-white text-gray-800 border-gray-300'}`}
-          >
-            {collapsedSections.projects ? '展开项目' : '收起项目'}
-          </button>
-          <button
-            onClick={() => setCollapsedSections(s => ({ ...s, requirements: !s.requirements }))}
-            className={`px-3 py-1.5 rounded text-sm border ${collapsedSections.requirements ? 'bg-gray-200 text-gray-600' : 'bg-white text-gray-800 border-gray-300'}`}
-          >
-            {collapsedSections.requirements ? '展开需求' : '收起需求'}
-          </button>
-          <button
-            onClick={() => setCollapsedSections(s => ({ ...s, tasks: !s.tasks }))}
-            className={`px-3 py-1.5 rounded text-sm border ${collapsedSections.tasks ? 'bg-gray-200 text-gray-600' : 'bg-white text-gray-800 border-gray-300'}`}
-          >
-            {collapsedSections.tasks ? '展开任务' : '收起任务'}
-          </button>
-        </div>
-
-        {/* 创建项目表单区域 */}
+        {/* 操作按钮 */}
         <div className="mb-6 flex gap-3">
-          {!showProjectForm ? (
-            <>
-            <button
-              onClick={() => setShowProjectForm(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              + 添加项目
-            </button>
-            <Link
-              href="/manage"
-              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-            >
-              + 添加需求
-            </Link>
-            <Link
-              href="/manage"
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-            >
-              + 添加任务
-            </Link>
-            </>
-          ) : (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-bold mb-4">创建新项目</h2>
-              <form onSubmit={handleCreateProject} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">项目名称</label>
-                  <input
-                    type="text"
-                    value={newProject.title}
-                    onChange={(e) => setNewProject({ ...newProject, title: e.target.value })}
-                    required
-                    className="w-full px-3 py-2 border rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">项目描述（可选）</label>
-                  <textarea
-                    value={newProject.description}
-                    onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md"
-                    rows={3}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">开始日期</label>
-                    <input
-                      type="date"
-                      value={newProject.startDate}
-                      onChange={(e) => setNewProject({ ...newProject, startDate: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-md"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">结束日期</label>
-                    <input
-                      type="date"
-                      value={newProject.endDate}
-                      onChange={(e) => setNewProject({ ...newProject, endDate: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-md"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">优先级（0-5，0最高）</label>
-                  <input
-                    type="number"
-                    value={newProject.priority}
-                    onChange={(e) => setNewProject({ ...newProject, priority: parseInt(e.target.value) })}
-                    min="0"
-                    max="5"
-                    required
-                    className="w-full px-3 py-2 border rounded-md"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    创建
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowProjectForm(false)}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                  >
-                    取消
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
+          <Link
+            href="/project/new"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            + 添加项目
+          </Link>
+          <Link
+            href="/manage"
+            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+          >
+            + 添加需求
+          </Link>
+          <Link
+            href="/manage"
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+          >
+            + 添加任务
+          </Link>
         </div>
 
         <div className="space-y-6">
-          {!collapsedSections.projects && sortedProjects.map(project => {
+          {sortedProjects.map(project => {
             const currentReq = getCurrentRequirement(project)
             const nextReq = getNextRequirement(project)
 
@@ -956,7 +808,7 @@ export default function ProjectsPage() {
           )}
 
           {/* 独立进行中的需求 */}
-          {!collapsedSections.requirements && standaloneRequirements.length > 0 && (
+          {standaloneRequirements.length > 0 && (
             <div className="bg-white rounded-lg shadow p-6 mt-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">独立需求（进行中）</h2>
               <div className="space-y-3">
@@ -996,7 +848,7 @@ export default function ProjectsPage() {
           )}
 
           {/* 独立进行中的任务 */}
-          {!collapsedSections.tasks && standaloneTasks.length > 0 && (
+          {standaloneTasks.length > 0 && (
             <div className="bg-white rounded-lg shadow p-6 mt-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">独立任务（进行中）</h2>
               <div className="space-y-3">

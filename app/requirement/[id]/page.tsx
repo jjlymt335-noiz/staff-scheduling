@@ -51,7 +51,7 @@ export default function RequirementDetailPage({ params }: { params: Promise<{ id
   const { id: requirementId } = React.use(params)
   const [requirement, setRequirement] = useState<Requirement | null>(null)
   const [loading, setLoading] = useState(true)
-  const [linksExpanded, setLinksExpanded] = useState(false)
+  const [linksExpanded, setLinksExpanded] = useState(true)
   const [editingLinks, setEditingLinks] = useState(false)
   const [links, setLinks] = useState<RelatedLink[]>([])
   const [newLinkTitle, setNewLinkTitle] = useState('')
