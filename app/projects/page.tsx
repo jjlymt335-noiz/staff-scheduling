@@ -648,18 +648,6 @@ export default function ProjectsPage() {
                         />
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">优先级（0-5，0最高）</label>
-                      <input
-                        type="number"
-                        value={editingProject.priority}
-                        onChange={(e) => setEditingProject({ ...editingProject, priority: parseInt(e.target.value) })}
-                        min="0"
-                        max="5"
-                        required
-                        className="w-full px-3 py-2 border rounded-md"
-                      />
-                    </div>
                     <div className="flex gap-2">
                       <button
                         type="submit"

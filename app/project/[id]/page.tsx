@@ -219,12 +219,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 </div>
               )}
               <div>
-                <div className="text-sm text-gray-600">优先级</div>
-                <div className="font-medium">
-                  {project.priority} {project.priority === 0 && '(最高)'}
-                </div>
-              </div>
-              <div>
                 <div className="text-sm text-gray-600">需求数量</div>
                 <div className="font-medium">{project.requirements.length} 个</div>
               </div>

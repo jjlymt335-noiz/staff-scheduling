@@ -125,19 +125,6 @@ export default function NewProjectPage() {
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">优先级（0-5，0最高）</label>
-              <input
-                type="number"
-                value={newProject.priority}
-                onChange={(e) => setNewProject({ ...newProject, priority: parseInt(e.target.value) })}
-                min="0"
-                max="5"
-                required
-                className="w-full px-3 py-2 border rounded-md"
-              />
-            </div>
-
             {/* 相关链接 */}
             <div>
               <label className="block text-sm font-medium mb-2">相关链接（可选，最多5个）</label>
