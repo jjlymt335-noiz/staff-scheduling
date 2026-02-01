@@ -273,7 +273,7 @@ export default function CalendarPage() {
                onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h2 className="text-2xl font-bold">需求：{selectedRequirement.title}</h2>
+                <h2 className="text-2xl font-bold">需求：<Link href={`/requirement/${selectedRequirement.id}`} className="text-blue-600 hover:underline">{selectedRequirement.title}</Link></h2>
                 {selectedRequirement.startDate && selectedRequirement.endDate && (
                   <p className="text-gray-600 mt-1">
                     {new Date(selectedRequirement.startDate).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })} - {new Date(selectedRequirement.endDate).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })}

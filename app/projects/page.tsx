@@ -484,7 +484,7 @@ export default function ProjectsPage() {
           >
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h2 className="text-2xl font-bold">需求：{selectedRequirement.title}</h2>
+                <h2 className="text-2xl font-bold">需求：<Link href={`/requirement/${selectedRequirement.id}`} className="text-blue-600 hover:underline">{selectedRequirement.title}</Link></h2>
                 {selectedRequirement.startDate && selectedRequirement.endDate && (
                   <p className="text-gray-600 mt-1">
                     {formatDate(selectedRequirement.startDate)} - {formatDate(selectedRequirement.endDate)}
