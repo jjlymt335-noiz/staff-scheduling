@@ -255,7 +255,7 @@ export default function NewRequirementPage() {
                         <div className="text-sm text-gray-600">
                           负责人: {users.find(u => u.id === task.userId)?.name || '未知'} |
                           优先级: {task.priority} |
-                          开始: {task.planStartDate} ({task.startTimeSlot === 'MORNING' ? '上午' : '下午'}) |
+                          开始: {task.planStartDate} |
                           时长: {task.durationWorkdays}工作日
                         </div>
                       </div>
