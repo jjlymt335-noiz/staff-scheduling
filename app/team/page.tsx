@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { getBeijingToday, formatDateBeijing } from '@/lib/timezone'
 
 interface User {
   id: string
@@ -96,8 +97,7 @@ export default function TeamPage() {
 
   // 获取用户的当前任务和下一个任务（考虑并发任务规则）
   const getCurrentAndNextTasks = (userId: string) => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const today = getBeijingToday()
 
     // 获取包含今天的任务
     const todayTasks = tasks
@@ -150,10 +150,7 @@ export default function TeamPage() {
 
   // 格式化日期
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('zh-CN', {
-      month: '2-digit',
-      day: '2-digit'
-    })
+    return formatDateBeijing(dateStr)
   }
 
   // 检查任务是否延期

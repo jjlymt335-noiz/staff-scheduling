@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { getBeijingDateStr } from '@/lib/timezone'
 
 interface User {
   id: string
@@ -38,7 +39,7 @@ function ManagePageContent() {
     requirementId: '',
     userId: '',
     priority: 0,
-    planStartDate: new Date().toISOString().split('T')[0],
+    planStartDate: getBeijingDateStr(),
     startTimeSlot: 'MORNING',
     durationWorkdays: 1,
     endTimeSlot: 'AFTERNOON',
@@ -92,7 +93,7 @@ function ManagePageContent() {
           requirementId: '',
           userId: '',
           priority: 0,
-          planStartDate: new Date().toISOString().split('T')[0],
+          planStartDate: getBeijingDateStr(),
           startTimeSlot: 'MORNING',
           durationWorkdays: 1,
           endTimeSlot: 'AFTERNOON',

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { formatDateBeijing } from '@/lib/timezone'
 
 interface User {
   id: string
@@ -168,10 +169,7 @@ export default function PersonPage() {
 
   // 格式化日期
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('zh-CN', {
-      month: '2-digit',
-      day: '2-digit',
-    })
+    return formatDateBeijing(date)
   }
 
   // 添加头脑风暴项

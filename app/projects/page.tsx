@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { getBeijingDateStr, getBeijingToday, formatDateBeijing } from '@/lib/timezone'
 
 interface User {
   id: string
@@ -87,7 +88,7 @@ export default function ProjectsPage() {
   const [newRequirement, setNewRequirement] = useState({
     title: '',
     priority: 0,
-    startDate: new Date().toISOString().split('T')[0],
+    startDate: getBeijingDateStr(),
     endDate: ''
   })
   const [reqLinks, setReqLinks] = useState<Array<{ title: string; url: string }>>([])
@@ -157,7 +158,7 @@ export default function ProjectsPage() {
         setNewRequirement({
           title: '',
           priority: 0,
-          startDate: new Date().toISOString().split('T')[0],
+          startDate: getBeijingDateStr(),
           endDate: ''
         })
         setReqLinks([])
@@ -319,11 +320,7 @@ export default function ProjectsPage() {
   // 格式化日期
   const formatDate = (date: string | null) => {
     if (!date) return '-'
-    return new Date(date).toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    })
+    return formatDateBeijing(date)
   }
 
   // 按字母顺序排序项目
@@ -333,8 +330,7 @@ export default function ProjectsPage() {
 
   // 获取独立进行中的需求（不属于任何项目）
   const getStandaloneInProgressRequirements = () => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const today = getBeijingToday()
 
     return requirements
       .filter(req => {
@@ -363,8 +359,7 @@ export default function ProjectsPage() {
 
   // 获取独立进行中的任务（不属于任何需求和项目）
   const getStandaloneInProgressTasks = () => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const today = getBeijingToday()
 
     return tasks
       .filter(task => {
@@ -415,8 +410,7 @@ export default function ProjectsPage() {
         }
 
         // 找到该用户当前正在做的任务
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
+        const today = getBeijingToday()
         const taskStart = new Date(task.planStartDate)
         taskStart.setHours(0, 0, 0, 0)
 

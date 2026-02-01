@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { getBeijingDateStr, getBeijingToday, isBeijingToday, formatDateBeijing } from '@/lib/timezone'
 
 interface User {
   id: string
@@ -165,15 +166,7 @@ export default function CalendarPage() {
     return tasksForDate.length > 0 ? tasksForDate[0] : null
   }
 
-  // 判断日期是否是今天
-  const isToday = (date: Date) => {
-    const today = new Date()
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    )
-  }
+  const isToday = (date: Date) => isBeijingToday(date)
 
   const formatTaskTitle = (task: Task) => {
     if (task.type === 'IN_REQUIREMENT' && task.requirement) {
@@ -225,8 +218,7 @@ export default function CalendarPage() {
         }
 
         // 找到该用户当前正在做的任务
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
+        const today = getBeijingToday()
         const taskStart = new Date(task.planStartDate)
         taskStart.setHours(0, 0, 0, 0)
 
@@ -313,7 +305,7 @@ export default function CalendarPage() {
             <div className="space-y-3 text-sm">
               <div><span className="text-gray-500">负责人：</span><Link href={`/person/${selectedTask.user.id}`} className="text-blue-600 hover:underline">{selectedTask.user.name}</Link></div>
               <div><span className="text-gray-500">优先级：</span>{selectedTask.priority}</div>
-              <div><span className="text-gray-500">时间：</span>{new Date(selectedTask.planStartDate).toLocaleDateString('zh-CN')} - {new Date(selectedTask.planEndDate).toLocaleDateString('zh-CN')}</div>
+              <div><span className="text-gray-500">时间：</span>{formatDateBeijing(selectedTask.planStartDate)} - {formatDateBeijing(selectedTask.planEndDate)}</div>
               {selectedTask.requirement && (
                 <div><span className="text-gray-500">所属需求：</span><Link href={`/requirement/${selectedTask.requirement.id}`} className="text-blue-600 hover:underline">{selectedTask.requirement.title}</Link></div>
               )}
@@ -345,7 +337,7 @@ export default function CalendarPage() {
                 <h2 className="text-2xl font-bold">需求：<Link href={`/requirement/${selectedRequirement.id}`} className="text-blue-600 hover:underline">{selectedRequirement.title}</Link></h2>
                 {selectedRequirement.startDate && selectedRequirement.endDate && (
                   <p className="text-gray-600 mt-1">
-                    {new Date(selectedRequirement.startDate).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })} - {new Date(selectedRequirement.endDate).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                    {formatDateBeijing(selectedRequirement.startDate)} - {formatDateBeijing(selectedRequirement.endDate)}
                   </p>
                 )}
               </div>

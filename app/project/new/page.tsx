@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { getBeijingDateStr, getBeijingDateStrOffset } from '@/lib/timezone'
 
 interface RelatedLink {
   title: string
@@ -13,12 +14,9 @@ export default function NewProjectPage() {
   const router = useRouter()
 
   const getDefaultProjectDates = () => {
-    const today = new Date()
-    const sixWeeksLater = new Date(today)
-    sixWeeksLater.setDate(today.getDate() + 42)
     return {
-      startDate: today.toISOString().split('T')[0],
-      endDate: sixWeeksLater.toISOString().split('T')[0]
+      startDate: getBeijingDateStr(),
+      endDate: getBeijingDateStrOffset(42)
     }
   }
 

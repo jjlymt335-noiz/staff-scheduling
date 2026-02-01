@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { formatDateBeijing } from '@/lib/timezone'
 
 interface RelatedLink {
   title: string
@@ -88,11 +89,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '未设置'
-    return new Date(dateStr).toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    })
+    return formatDateBeijing(dateStr)
   }
 
   const statusLabels: Record<string, string> = {
