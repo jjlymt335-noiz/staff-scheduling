@@ -432,15 +432,11 @@ export default function CalendarPage() {
                         >
                           {task ? (
                             <div className="relative group">
-                              <div
-                                onClick={() => {
-                                  if (task.type === 'IN_REQUIREMENT' && task.requirement && task.requirementId) {
-                                    showRequirementDetail(task.requirementId, task.requirement.title)
-                                  }
-                                }}
-                                className={`text-xs p-2 rounded ${
+                              <Link
+                                href={`/task/${task.id}`}
+                                className={`text-xs p-2 rounded block ${
                                   task.type === 'IN_REQUIREMENT'
-                                    ? 'bg-blue-100 hover:bg-blue-200 cursor-pointer'
+                                    ? 'bg-blue-100 hover:bg-blue-200'
                                     : 'bg-green-100 hover:bg-green-200'
                                 }`}
                                 title={formatTaskTitle(task)}
@@ -451,7 +447,7 @@ export default function CalendarPage() {
                                 <div className="text-gray-600 mt-1">
                                   优先级: {task.priority}
                                 </div>
-                              </div>
+                              </Link>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation()
