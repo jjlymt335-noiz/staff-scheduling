@@ -401,12 +401,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             >
               添加需求
             </Link>
-            <Link
-              href={`/manage?projectId=${projectId}`}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-            >
-              添加任务
-            </Link>
           </div>
         </div>
       </div>

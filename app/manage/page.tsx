@@ -113,8 +113,8 @@ export default function ManagePage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
-          <Link href={projectId ? `/project/${projectId}` : '/team'} className="text-blue-600 hover:underline">
-            ← {projectId ? '返回项目详情' : '返回团队视图'}
+          <Link href={projectId ? `/project/${projectId}` : '/projects'} className="text-blue-600 hover:underline">
+            ← {projectId ? '返回项目详情' : '返回项目列表'}
           </Link>
         </div>
 
