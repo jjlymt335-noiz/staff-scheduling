@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 export async function GET() {
   try {
     const projects = await prisma.project.findMany({
-      orderBy: { priority: 'asc' },
+      orderBy: { title: 'asc' },
       include: {
         requirements: {
           include: {
@@ -35,19 +35,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { title, description, priority, startDate, endDate, links } = body
 
-    if (!title || priority === undefined) {
-      return NextResponse.json({ error: 'Title and priority are required' }, { status: 400 })
-    }
-
-    if (priority < 0 || priority > 5) {
-      return NextResponse.json({ error: 'Priority must be between 0 and 5' }, { status: 400 })
+    if (!title) {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 })
     }
 
     const project = await prisma.project.create({
       data: {
         title,
         description,
-        priority,
+        priority: priority ?? 0,
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
         links: links || null
