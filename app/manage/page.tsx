@@ -214,24 +214,6 @@ export default function ManagePage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  开始时段
-                </label>
-                <select
-                  value={newTask.startTimeSlot}
-                  onChange={(e) =>
-                    setNewTask({ ...newTask, startTimeSlot: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="MORNING">上午</option>
-                  <option value="AFTERNOON">下午</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
                   工作日天数
                 </label>
                 <input
@@ -247,22 +229,6 @@ export default function ManagePage() {
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  结束时段
-                </label>
-                <select
-                  value={newTask.endTimeSlot}
-                  onChange={(e) =>
-                    setNewTask({ ...newTask, endTimeSlot: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="MORNING">上午</option>
-                  <option value="AFTERNOON">下午</option>
-                </select>
               </div>
             </div>
 
