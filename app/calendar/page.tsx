@@ -19,6 +19,8 @@ interface Task {
   startTimeSlot: string
   planEndDate: string
   endTimeSlot: string
+  forecastEndDate: string | null
+  actualEndDate: string | null
   requirement: {
     title: string
   } | null
