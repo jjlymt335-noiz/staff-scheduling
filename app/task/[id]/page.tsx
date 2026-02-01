@@ -558,25 +558,6 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             )}
           </div>
 
-          {/* 操作按钮 */}
-          <div className="flex gap-3 mt-8">
-            {task.requirement && (
-              <Link
-                href={`/requirement/${task.requirement.id}`}
-                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-              >
-                查看需求
-              </Link>
-            )}
-            {task.requirement?.project && (
-              <Link
-                href={`/project/${task.requirement.project.id}`}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-              >
-                查看项目
-              </Link>
-            )}
-          </div>
         </div>
       </div>
     </div>
