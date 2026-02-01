@@ -1,0 +1,108 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  role      String   // MANAGEMENT, FRONTEND, BACKEND, PRODUCT, OPERATIONS, STRATEGY
+  createdAt DateTime @default(now())
+  tasks     Task[]
+  brainstormItems BrainstormItem[]
+  stageAssignments StageAssignment[]
+}
+
+model Project {
+  id           String        @id @default(cuid())
+  title        String
+  description  String?
+  priority     Int           // 0-5, 0 is highest priority
+  startDate    DateTime?     // Project start date
+  endDate      DateTime?     // Project end date
+  links        String?       // JSON array of links (max 5), format: [{"title": "...", "url": "..."}]
+  remarks      String?
+  createdAt    DateTime      @default(now())
+  requirements Requirement[]
+}
+
+model Requirement {
+  id        String   @id @default(cuid())
+  title     String
+  priority  Int      // 0-5, 0 is highest priority
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
+  startDate DateTime? // Requirement start date
+  endDate   DateTime? // Requirement end date
+  links     String?   // JSON array of links (max 5), format: [{"title": "...", "url": "..."}]
+  remarks   String?
+  createdAt DateTime @default(now())
+  tasks     Task[]
+  stages    Stage[]
+}
+
+model Stage {
+  id             String            @id @default(cuid())
+  name           String            // 方案确认, 开发, GTM, or custom
+  order          Int               // Stage order within requirement
+  requirementId  String
+  requirement    Requirement       @relation(fields: [requirementId], references: [id])
+  startDate      DateTime?
+  endDate        DateTime?
+  status         String            @default("PENDING")  // PENDING, IN_PROGRESS, DONE
+  description    String?
+  deliverables   String?
+  createdAt      DateTime          @default(now())
+  assignments    StageAssignment[]
+}
+
+model StageAssignment {
+  id      String @id @default(cuid())
+  stageId String
+  stage   Stage  @relation(fields: [stageId], references: [id])
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+
+  @@unique([stageId, userId])
+}
+
+model Task {
+  id                String    @id @default(cuid())
+  title             String
+  type              String    // IN_REQUIREMENT, STANDALONE
+  requirementId     String?
+  requirement       Requirement? @relation(fields: [requirementId], references: [id])
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  priority          Int       // 0-5, 0 is highest priority
+  planStartDate     DateTime
+  startTimeSlot     String    @default("MORNING")  // MORNING, AFTERNOON
+  durationWorkdays  Int
+  planEndDate       DateTime
+  endTimeSlot       String    @default("AFTERNOON")  // MORNING, AFTERNOON
+  forecastEndDate   DateTime?
+  actualEndDate     DateTime?
+  status            String    @default("TODO")  // TODO, DOING, DONE
+  links             String?   // JSON array of links (max 5), format: [{"title": "...", "url": "..."}]
+  remarks           String?
+  createdAt         DateTime  @default(now())
+}
+
+model BrainstormItem {
+  id              String    @id @default(cuid())
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id])
+  title           String
+  type            String    // REQUIREMENT, TASK
+  priority        Int       // 0-5, 0 is highest priority
+  planStartDate   DateTime?
+  planEndDate     DateTime?
+  createdAt       DateTime  @default(now())
+}
