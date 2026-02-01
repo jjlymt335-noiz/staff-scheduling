@@ -161,7 +161,7 @@ export default function PersonPage() {
   // 格式化任务标题
   const formatTaskTitle = (task: Task) => {
     if (task.type === 'IN_REQUIREMENT' && task.requirement) {
-      return `${task.requirement.title}的${task.title}`
+      return `需求：${task.requirement.title}的 任务：${task.title}`
     }
     return task.title
   }

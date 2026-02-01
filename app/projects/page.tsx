@@ -37,6 +37,7 @@ interface Requirement {
   projectId: string | null
   startDate: string | null
   endDate: string | null
+  links: string | null
   stages: Stage[]
   tasks: Task[]
 }
@@ -74,6 +75,7 @@ export default function ProjectsPage() {
     title: string
     startDate: string | null
     endDate: string | null
+    links: Array<{ title: string; url: string }>
     personnel: Array<{
       userId: string
       userName: string
@@ -437,11 +439,17 @@ export default function ProjectsPage() {
         }
       })
 
+      let parsedLinks: Array<{ title: string; url: string }> = []
+      if (requirement.links) {
+        try { parsedLinks = JSON.parse(requirement.links) } catch (e) { /* ignore */ }
+      }
+
       setSelectedRequirement({
         id: requirement.id,
         title: requirement.title,
         startDate: requirement.startDate,
         endDate: requirement.endDate,
+        links: parsedLinks,
         personnel: Array.from(userMap.values()).map(u => ({
           userId: u.userId,
           userName: u.userName,
@@ -490,6 +498,19 @@ export default function ProjectsPage() {
                 ×
               </button>
             </div>
+
+            {selectedRequirement.links.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold mb-2">相关链接</h3>
+                <div className="space-y-1">
+                  {selectedRequirement.links.map((link, index) => (
+                    <div key={index}>
+                      <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">{link.title}</a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-4">相关人员</h3>

@@ -560,12 +560,6 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
           {/* 操作按钮 */}
           <div className="flex gap-3 mt-8">
-            <Link
-              href={`/person/${task.user.id}`}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              查看负责人
-            </Link>
             {task.requirement && (
               <Link
                 href={`/requirement/${task.requirement.id}`}
