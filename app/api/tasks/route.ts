@@ -90,6 +90,7 @@ export async function POST(request: NextRequest) {
       endTimeSlot,
       forecastEndDate,
       status,
+      links,
     } = body
 
     // 验证必填字段
@@ -304,6 +305,7 @@ export async function POST(request: NextRequest) {
         endTimeSlot: finalEndSlot,
         forecastEndDate: forecastEndDate ? new Date(forecastEndDate) : null,
         status: status || 'TODO',
+        links: links || null,
       },
       include: {
         user: true,

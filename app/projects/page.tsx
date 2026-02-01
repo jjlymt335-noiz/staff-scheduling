@@ -88,6 +88,9 @@ export default function ProjectsPage() {
     startDate: new Date().toISOString().split('T')[0],
     endDate: ''
   })
+  const [reqLinks, setReqLinks] = useState<Array<{ title: string; url: string }>>([])
+  const [newReqLinkTitle, setNewReqLinkTitle] = useState('')
+  const [newReqLinkUrl, setNewReqLinkUrl] = useState('')
   const [editingProject, setEditingProject] = useState<Project | null>(null)
 
   const roleOrder = ['MANAGEMENT', 'FRONTEND', 'BACKEND', 'PRODUCT', 'OPERATIONS', 'STRATEGY']
@@ -138,7 +141,8 @@ export default function ProjectsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...newRequirement,
-          projectId
+          projectId,
+          links: reqLinks.length > 0 ? JSON.stringify(reqLinks) : null
         })
       })
       if (response.ok) {
@@ -149,6 +153,7 @@ export default function ProjectsPage() {
           startDate: new Date().toISOString().split('T')[0],
           endDate: ''
         })
+        setReqLinks([])
         fetchData()
         alert('需求创建成功！')
       } else {
@@ -769,6 +774,30 @@ export default function ProjectsPage() {
                           required
                           className="w-full px-3 py-2 border rounded-md text-sm"
                         />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">相关链接（可选，最多5个）</label>
+                        {reqLinks.length > 0 && (
+                          <div className="space-y-1 mb-2">
+                            {reqLinks.map((link, index) => (
+                              <div key={index} className="flex items-center gap-2 p-1.5 bg-white rounded text-sm">
+                                <div className="flex-1 truncate">{link.title} - <span className="text-gray-500">{link.url}</span></div>
+                                <button type="button" onClick={() => setReqLinks(reqLinks.filter((_, i) => i !== index))} className="text-red-600 hover:text-red-800 text-xs">删除</button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {reqLinks.length < 5 && (
+                          <div className="flex gap-2">
+                            <input type="text" placeholder="链接标题" value={newReqLinkTitle} onChange={(e) => setNewReqLinkTitle(e.target.value)} className="flex-1 px-2 py-1.5 border rounded text-sm" />
+                            <input type="url" placeholder="链接URL" value={newReqLinkUrl} onChange={(e) => setNewReqLinkUrl(e.target.value)} className="flex-1 px-2 py-1.5 border rounded text-sm" />
+                            <button type="button" onClick={() => {
+                              if (!newReqLinkTitle.trim() || !newReqLinkUrl.trim()) { alert('请填写链接标题和URL'); return }
+                              setReqLinks([...reqLinks, { title: newReqLinkTitle, url: newReqLinkUrl }])
+                              setNewReqLinkTitle(''); setNewReqLinkUrl('')
+                            }} className="px-2 py-1.5 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300">添加</button>
+                          </div>
+                        )}
                       </div>
                       <div className="flex gap-2">
                         <button

@@ -31,6 +31,9 @@ export default function ManagePage() {
     durationWorkdays: 1,
     endTimeSlot: 'AFTERNOON',
   })
+  const [taskLinks, setTaskLinks] = useState<Array<{ title: string; url: string }>>([])
+  const [newTaskLinkTitle, setNewTaskLinkTitle] = useState('')
+  const [newTaskLinkUrl, setNewTaskLinkUrl] = useState('')
 
   useEffect(() => {
     fetchData()
@@ -61,6 +64,7 @@ export default function ManagePage() {
         requirementId: newTask.type === 'IN_REQUIREMENT' ? newTask.requirementId : null,
         durationWorkdays: parseInt(newTask.durationWorkdays.toString()),
         priority: parseInt(newTask.priority.toString()),
+        links: taskLinks.length > 0 ? JSON.stringify(taskLinks) : null,
       }
 
       const response = await fetch('/api/tasks', {
@@ -81,6 +85,7 @@ export default function ManagePage() {
           durationWorkdays: 1,
           endTimeSlot: 'AFTERNOON',
         })
+        setTaskLinks([])
         alert('任务添加成功！')
       } else {
         const error = await response.json()
@@ -279,6 +284,34 @@ export default function ManagePage() {
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                相关链接（可选，最多5个）
+              </label>
+              {taskLinks.length > 0 && (
+                <div className="space-y-1 mb-2">
+                  {taskLinks.map((link, index) => (
+                    <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded text-sm">
+                      <div className="flex-1 truncate">{link.title} - <span className="text-gray-500">{link.url}</span></div>
+                      <button type="button" onClick={() => setTaskLinks(taskLinks.filter((_, i) => i !== index))} className="text-red-600 hover:text-red-800 text-xs">删除</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {taskLinks.length < 5 && (
+                <div className="flex gap-2">
+                  <input type="text" placeholder="链接标题" value={newTaskLinkTitle} onChange={(e) => setNewTaskLinkTitle(e.target.value)} className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm" />
+                  <input type="url" placeholder="链接URL" value={newTaskLinkUrl} onChange={(e) => setNewTaskLinkUrl(e.target.value)} className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm" />
+                  <button type="button" onClick={() => {
+                    if (!newTaskLinkTitle.trim() || !newTaskLinkUrl.trim()) { alert('请填写链接标题和URL'); return }
+                    if (taskLinks.length >= 5) { alert('最多只能添加5个链接'); return }
+                    setTaskLinks([...taskLinks, { title: newTaskLinkTitle, url: newTaskLinkUrl }])
+                    setNewTaskLinkTitle(''); setNewTaskLinkUrl('')
+                  }} className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm">添加</button>
+                </div>
+              )}
             </div>
 
             <button

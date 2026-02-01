@@ -33,7 +33,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, description, priority, startDate, endDate } = body
+    const { title, description, priority, startDate, endDate, links } = body
 
     if (!title || priority === undefined) {
       return NextResponse.json({ error: 'Title and priority are required' }, { status: 400 })
@@ -49,7 +49,8 @@ export async function POST(request: NextRequest) {
         description,
         priority,
         startDate: startDate ? new Date(startDate) : null,
-        endDate: endDate ? new Date(endDate) : null
+        endDate: endDate ? new Date(endDate) : null,
+        links: links || null
       }
     })
 

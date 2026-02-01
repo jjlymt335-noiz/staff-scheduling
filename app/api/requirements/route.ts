@@ -24,7 +24,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, priority, projectId, startDate, endDate } = body
+    const { title, priority, projectId, startDate, endDate, links } = body
 
     if (!title || priority === undefined) {
       return NextResponse.json(
@@ -106,7 +106,8 @@ export async function POST(request: NextRequest) {
         priority,
         projectId: projectId || null,
         startDate: startDate ? new Date(startDate) : null,
-        endDate: endDate ? new Date(endDate) : null
+        endDate: endDate ? new Date(endDate) : null,
+        links: links || null
       },
     })
 
