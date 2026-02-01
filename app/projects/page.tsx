@@ -58,6 +58,8 @@ interface StandaloneTask {
   requirementId: string | null
   planStartDate: string
   planEndDate: string
+  forecastEndDate: string | null
+  actualEndDate: string | null
   status: string
   user: User
 }

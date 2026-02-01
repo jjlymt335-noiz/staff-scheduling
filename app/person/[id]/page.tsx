@@ -15,6 +15,7 @@ interface Task {
   title: string
   type: string
   priority: number
+  userId: string
   planStartDate: string
   planEndDate: string
   forecastEndDate: string | null
