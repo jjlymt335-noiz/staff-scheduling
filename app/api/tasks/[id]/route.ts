@@ -194,7 +194,7 @@ export async function PUT(
         where: {
           requirementId,
           userId,
-          id: { not: params.id },
+          id: { not: id },
         },
       })
 
@@ -231,7 +231,7 @@ export async function PUT(
     const userTasks = await prisma.task.findMany({
       where: {
         userId,
-        id: { not: params.id },
+        id: { not: id },
       },
       orderBy: { priority: 'asc' },
     })
