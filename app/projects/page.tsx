@@ -92,6 +92,11 @@ export default function ProjectsPage() {
   const [newReqLinkTitle, setNewReqLinkTitle] = useState('')
   const [newReqLinkUrl, setNewReqLinkUrl] = useState('')
   const [editingProject, setEditingProject] = useState<Project | null>(null)
+  const [collapsedSections, setCollapsedSections] = useState<{ projects: boolean; requirements: boolean; tasks: boolean }>({
+    projects: false,
+    requirements: false,
+    tasks: false,
+  })
 
   const roleOrder = ['MANAGEMENT', 'FRONTEND', 'BACKEND', 'PRODUCT', 'OPERATIONS', 'STRATEGY']
   const roleLabels: Record<string, string> = {
@@ -550,6 +555,28 @@ export default function ProjectsPage() {
           </div>
         </div>
 
+        {/* 收起/展开切换按钮 */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setCollapsedSections(s => ({ ...s, projects: !s.projects }))}
+            className={`px-3 py-1.5 rounded text-sm border ${collapsedSections.projects ? 'bg-gray-200 text-gray-600' : 'bg-white text-gray-800 border-gray-300'}`}
+          >
+            {collapsedSections.projects ? '展开项目' : '收起项目'}
+          </button>
+          <button
+            onClick={() => setCollapsedSections(s => ({ ...s, requirements: !s.requirements }))}
+            className={`px-3 py-1.5 rounded text-sm border ${collapsedSections.requirements ? 'bg-gray-200 text-gray-600' : 'bg-white text-gray-800 border-gray-300'}`}
+          >
+            {collapsedSections.requirements ? '展开需求' : '收起需求'}
+          </button>
+          <button
+            onClick={() => setCollapsedSections(s => ({ ...s, tasks: !s.tasks }))}
+            className={`px-3 py-1.5 rounded text-sm border ${collapsedSections.tasks ? 'bg-gray-200 text-gray-600' : 'bg-white text-gray-800 border-gray-300'}`}
+          >
+            {collapsedSections.tasks ? '展开任务' : '收起任务'}
+          </button>
+        </div>
+
         {/* 操作按钮 */}
         <div className="mb-6 flex gap-3">
           <Link
@@ -573,7 +600,7 @@ export default function ProjectsPage() {
         </div>
 
         <div className="space-y-6">
-          {sortedProjects.map(project => {
+          {!collapsedSections.projects && sortedProjects.map(project => {
             const currentReq = getCurrentRequirement(project)
             const nextReq = getNextRequirement(project)
 
@@ -837,7 +864,7 @@ export default function ProjectsPage() {
           )}
 
           {/* 独立进行中的需求 */}
-          {standaloneRequirements.length > 0 && (
+          {!collapsedSections.requirements && standaloneRequirements.length > 0 && (
             <div className="bg-white rounded-lg shadow p-6 mt-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">独立需求（进行中）</h2>
               <div className="space-y-3">
@@ -877,7 +904,7 @@ export default function ProjectsPage() {
           )}
 
           {/* 独立进行中的任务 */}
-          {standaloneTasks.length > 0 && (
+          {!collapsedSections.tasks && standaloneTasks.length > 0 && (
             <div className="bg-white rounded-lg shadow p-6 mt-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">独立任务（进行中）</h2>
               <div className="space-y-3">
