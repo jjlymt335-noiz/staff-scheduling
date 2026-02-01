@@ -98,6 +98,10 @@ export default function NewRequirementPage() {
 
   const handleAddRequirement = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!newRequirement.endDate) {
+      alert('请填写结束日期')
+      return
+    }
     try {
       // 先创建需求
       const reqResponse = await fetch('/api/requirements', {
@@ -201,7 +205,7 @@ export default function NewRequirementPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  结束日期
+                  结束日期 <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="date"
@@ -209,6 +213,7 @@ export default function NewRequirementPage() {
                   onChange={(e) =>
                     setNewRequirement({ ...newRequirement, endDate: e.target.value })
                   }
+                  required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>

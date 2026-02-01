@@ -26,9 +26,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { title, priority, projectId, startDate, endDate, links } = body
 
-    if (!title || priority === undefined) {
+    if (!title || priority === undefined || !endDate) {
       return NextResponse.json(
-        { error: 'Title and priority are required' },
+        { error: '需求名称、优先级和结束日期为必填项' },
         { status: 400 }
       )
     }
