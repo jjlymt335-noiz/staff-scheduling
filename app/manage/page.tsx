@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 interface User {
@@ -13,16 +14,19 @@ interface Requirement {
   id: string
   title: string
   priority: number
+  projectId: string | null
 }
 
 export default function ManagePage() {
+  const searchParams = useSearchParams()
+  const projectId = searchParams.get('projectId')
   const [users, setUsers] = useState<User[]>([])
   const [requirements, setRequirements] = useState<Requirement[]>([])
   const [loading, setLoading] = useState(true)
 
   const [newTask, setNewTask] = useState({
     title: '',
-    type: 'STANDALONE',
+    type: projectId ? 'IN_REQUIREMENT' : 'STANDALONE',
     requirementId: '',
     userId: '',
     priority: 0,
@@ -109,8 +113,8 @@ export default function ManagePage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
-          <Link href="/team" className="text-blue-600 hover:underline">
-            ← 返回团队视图
+          <Link href={projectId ? `/project/${projectId}` : '/team'} className="text-blue-600 hover:underline">
+            ← {projectId ? '返回项目详情' : '返回团队视图'}
           </Link>
         </div>
 
@@ -167,7 +171,9 @@ export default function ManagePage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">请选择</option>
-                    {requirements.map((req) => (
+                    {requirements
+                      .filter(req => !projectId || req.projectId === projectId)
+                      .map((req) => (
                       <option key={req.id} value={req.id}>
                         {req.title}
                       </option>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 interface User {
@@ -12,6 +12,8 @@ interface User {
 
 export default function NewRequirementPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const projectId = searchParams.get('projectId')
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -107,7 +109,7 @@ export default function NewRequirementPage() {
       const reqResponse = await fetch('/api/requirements', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newRequirement),
+        body: JSON.stringify({ ...newRequirement, projectId: projectId || undefined }),
       })
 
       if (!reqResponse.ok) {
@@ -144,8 +146,8 @@ export default function NewRequirementPage() {
         alert('需求创建成功！')
       }
 
-      // 跳转回团队视图
-      router.push('/team')
+      // 跳转回来源页面
+      router.push(projectId ? `/project/${projectId}` : '/team')
     } catch (error) {
       console.error('Failed to add requirement:', error)
       alert('创建失败')
@@ -164,8 +166,8 @@ export default function NewRequirementPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
-          <Link href="/team" className="text-blue-600 hover:underline">
-            ← 返回团队视图
+          <Link href={projectId ? `/project/${projectId}` : '/team'} className="text-blue-600 hover:underline">
+            ← {projectId ? '返回项目详情' : '返回团队视图'}
           </Link>
         </div>
 

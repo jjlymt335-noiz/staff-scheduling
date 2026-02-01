@@ -396,13 +396,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           {/* 操作按钮 */}
           <div className="flex gap-3 mt-8">
             <Link
-              href="/requirement/new"
+              href={`/requirement/new?projectId=${projectId}`}
               className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
             >
               添加需求
             </Link>
             <Link
-              href="/manage"
+              href={`/manage?projectId=${projectId}`}
               className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
             >
               添加任务
