@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
@@ -18,6 +18,14 @@ interface Requirement {
 }
 
 export default function ManagePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="text-gray-600">加载中...</div></div>}>
+      <ManagePageContent />
+    </Suspense>
+  )
+}
+
+function ManagePageContent() {
   const searchParams = useSearchParams()
   const projectId = searchParams.get('projectId')
   const [users, setUsers] = useState<User[]>([])
