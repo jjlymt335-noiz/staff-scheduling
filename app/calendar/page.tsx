@@ -21,7 +21,9 @@ interface Task {
   endTimeSlot: string
   forecastEndDate: string | null
   actualEndDate: string | null
+  links: string | null
   requirement: {
+    id: string
     title: string
   } | null
   user: User
@@ -32,6 +34,18 @@ export default function CalendarPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedTask, setSelectedTask] = useState<{
+    id: string
+    title: string
+    type: string
+    priority: number
+    planStartDate: string
+    planEndDate: string
+    links: Array<{ title: string; url: string }>
+    requirement: { id: string; title: string } | null
+    user: User
+  } | null>(null)
+
   const [selectedRequirement, setSelectedRequirement] = useState<{
     id: string
     title: string
@@ -161,12 +175,22 @@ export default function CalendarPage() {
     )
   }
 
-  // 格式化任务标题
-  const formatTaskTitle = (task: Task) => {
-    if (task.type === 'IN_REQUIREMENT' && task.requirement) {
-      return `${task.requirement.title}-${task.title}`
+  const openTaskModal = (task: Task) => {
+    let parsedLinks: Array<{ title: string; url: string }> = []
+    if (task.links) {
+      try { parsedLinks = JSON.parse(task.links) } catch (e) { /* ignore */ }
     }
-    return task.title
+    setSelectedTask({
+      id: task.id,
+      title: task.title,
+      type: task.type,
+      priority: task.priority,
+      planStartDate: task.planStartDate,
+      planEndDate: task.planEndDate,
+      links: parsedLinks,
+      requirement: task.requirement,
+      user: task.user,
+    })
   }
 
   // 获取需求的所有相关人员
@@ -266,6 +290,44 @@ export default function CalendarPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
+      {selectedTask && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+             onClick={() => setSelectedTask(null)}>
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto"
+               onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold">
+                <Link href={`/task/${selectedTask.id}`} className="text-blue-600 hover:underline">{selectedTask.title}</Link>
+              </h2>
+              <button onClick={() => setSelectedTask(null)}
+                      className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+            </div>
+
+            <div className="space-y-3 text-sm">
+              <div><span className="text-gray-500">负责人：</span><Link href={`/person/${selectedTask.user.id}`} className="text-blue-600 hover:underline">{selectedTask.user.name}</Link></div>
+              <div><span className="text-gray-500">优先级：</span>{selectedTask.priority}</div>
+              <div><span className="text-gray-500">时间：</span>{new Date(selectedTask.planStartDate).toLocaleDateString('zh-CN')} - {new Date(selectedTask.planEndDate).toLocaleDateString('zh-CN')}</div>
+              {selectedTask.requirement && (
+                <div><span className="text-gray-500">所属需求：</span><Link href={`/requirement/${selectedTask.requirement.id}`} className="text-blue-600 hover:underline">{selectedTask.requirement.title}</Link></div>
+              )}
+            </div>
+
+            {selectedTask.links.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold mb-2">相关链接</h3>
+                <div className="space-y-1">
+                  {selectedTask.links.map((link, index) => (
+                    <div key={index}>
+                      <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">{link.title}</a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {selectedRequirement && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
              onClick={() => setSelectedRequirement(null)}>
@@ -432,22 +494,22 @@ export default function CalendarPage() {
                         >
                           {task ? (
                             <div className="relative group">
-                              <Link
-                                href={`/task/${task.id}`}
-                                className={`text-xs p-2 rounded block ${
+                              <div
+                                onClick={() => openTaskModal(task)}
+                                className={`text-xs p-2 rounded block cursor-pointer ${
                                   task.type === 'IN_REQUIREMENT'
                                     ? 'bg-blue-100 hover:bg-blue-200'
                                     : 'bg-green-100 hover:bg-green-200'
                                 }`}
-                                title={formatTaskTitle(task)}
+                                title={task.title}
                               >
                                 <div className="font-medium truncate">
-                                  {formatTaskTitle(task)}
+                                  {task.title}
                                 </div>
                                 <div className="text-gray-600 mt-1">
                                   优先级: {task.priority}
                                 </div>
-                              </Link>
+                              </div>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation()
