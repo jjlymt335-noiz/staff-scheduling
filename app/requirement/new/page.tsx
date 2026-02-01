@@ -341,24 +341,6 @@ export default function NewRequirementPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      开始时段
-                    </label>
-                    <select
-                      value={currentTaskInput.startTimeSlot}
-                      onChange={(e) =>
-                        setCurrentTaskInput({ ...currentTaskInput, startTimeSlot: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                    >
-                      <option value="MORNING">上午</option>
-                      <option value="AFTERNOON">下午</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       工作日天数
                     </label>
                     <input
@@ -373,22 +355,6 @@ export default function NewRequirementPage() {
                       min="1"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      结束时段
-                    </label>
-                    <select
-                      value={currentTaskInput.endTimeSlot}
-                      onChange={(e) =>
-                        setCurrentTaskInput({ ...currentTaskInput, endTimeSlot: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                    >
-                      <option value="MORNING">上午</option>
-                      <option value="AFTERNOON">下午</option>
-                    </select>
                   </div>
                 </div>
 
