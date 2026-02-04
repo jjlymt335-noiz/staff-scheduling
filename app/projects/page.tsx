@@ -1059,10 +1059,10 @@ export default function ProjectsPage() {
               </span>
               <Link
                 href={`/person/${task.user.id}`}
-                className="flex items-center gap-2 text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-brand-primary)]"
+                className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-[var(--ds-bg-hover)] border border-[var(--ds-border-default)] hover:bg-[var(--ds-bg-selected)] hover:border-[var(--ds-brand-primary)] transition-colors"
               >
                 <AssigneeAvatar users={[{ id: task.user.id, name: task.user.name }]} size="sm" />
-                <span>{task.user.name}</span>
+                <span className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-primary)] font-medium pr-1">{task.user.name}</span>
               </Link>
               <button
                 onClick={() => handleDeleteTask(task.id)}
