@@ -425,8 +425,8 @@ export default function CalendarPage() {
       <div>
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-[var(--ds-font-size-xxl)] font-bold text-[var(--ds-text-primary)]">
-            日历视图 <span className="text-[var(--ds-font-size-lg)] font-normal text-[var(--ds-text-secondary)]">- {weekLabel}</span>
+          <h1 className="text-2xl font-bold text-[var(--ds-text-primary)]">
+            日历视图 <span className="text-lg font-normal text-[var(--ds-text-secondary)]">- {weekLabel}</span>
           </h1>
           <div className="flex gap-2">
             <button

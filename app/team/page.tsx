@@ -196,7 +196,7 @@ export default function TeamPage() {
     <div>
       {/* 页面头部 */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-[var(--ds-font-size-xxl)] font-bold text-[var(--ds-text-primary)]">团队视图</h1>
+        <h1 className="text-2xl font-bold text-[var(--ds-text-primary)]">团队视图</h1>
         <div className="flex gap-2">
           <Link href="/project/new">
             <Button variant="primary" size="sm">+ 添加项目</Button>
