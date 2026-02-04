@@ -299,46 +299,46 @@ export default function CalendarPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">加载中...</div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-[var(--ds-text-secondary)]">加载中...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div>
       {selectedTask && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        <div className="fixed inset-0 bg-[var(--ds-bg-overlay)] flex items-center justify-center z-50"
              onClick={() => setSelectedTask(null)}>
-          <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto"
+          <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto shadow-[var(--ds-shadow-overlay)]"
                onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">
-                <Link href={`/task/${selectedTask.id}`} className="text-blue-600 hover:underline">{selectedTask.title}</Link>
+              <h2 className="text-[var(--ds-font-size-xl)] font-bold">
+                <Link href={`/task/${selectedTask.id}`} className="text-[var(--ds-text-link)] hover:underline">{selectedTask.title}</Link>
               </h2>
               <button onClick={() => setSelectedTask(null)}
-                      className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+                      className="text-[var(--ds-text-disabled)] hover:text-[var(--ds-text-primary)] text-2xl">×</button>
             </div>
 
-            <div className="space-y-3 text-sm">
-              <div><span className="text-gray-500">负责人：</span><Link href={`/person/${selectedTask.user.id}`} className="text-blue-600 hover:underline">{selectedTask.user.name}</Link></div>
-              <div><span className="text-gray-500">优先级：</span>{selectedTask.priority}</div>
-              <div><span className="text-gray-500">时间：</span>{formatDateBeijing(selectedTask.planStartDate)} - {formatDateBeijing(selectedTask.planEndDate)}</div>
+            <div className="space-y-3 text-[var(--ds-font-size-sm)]">
+              <div><span className="text-[var(--ds-text-secondary)]">负责人：</span><Link href={`/person/${selectedTask.user.id}`} className="text-[var(--ds-text-link)] hover:underline">{selectedTask.user.name}</Link></div>
+              <div><span className="text-[var(--ds-text-secondary)]">优先级：</span>{selectedTask.priority}</div>
+              <div><span className="text-[var(--ds-text-secondary)]">时间：</span>{formatDateBeijing(selectedTask.planStartDate)} - {formatDateBeijing(selectedTask.planEndDate)}</div>
               {selectedTask.requirement && (
-                <div><span className="text-gray-500">所属需求：</span><Link href={`/requirement/${selectedTask.requirement.id}`} className="text-blue-600 hover:underline">{selectedTask.requirement.title}</Link></div>
+                <div><span className="text-[var(--ds-text-secondary)]">所属需求：</span><Link href={`/requirement/${selectedTask.requirement.id}`} className="text-[var(--ds-text-link)] hover:underline">{selectedTask.requirement.title}</Link></div>
               )}
               {selectedTask.predecessor && (
-                <div><span className="text-gray-500">前置任务：</span><Link href={`/task/${selectedTask.predecessor.id}`} className="text-blue-600 hover:underline">[{selectedTask.predecessor.code}] {selectedTask.predecessor.title}</Link></div>
+                <div><span className="text-[var(--ds-text-secondary)]">前置任务：</span><Link href={`/task/${selectedTask.predecessor.id}`} className="text-[var(--ds-text-link)] hover:underline">[{selectedTask.predecessor.code}] {selectedTask.predecessor.title}</Link></div>
               )}
             </div>
 
             {selectedTask.links.length > 0 && (
               <div className="mt-4">
-                <h3 className="text-lg font-semibold mb-2">相关链接</h3>
+                <h3 className="text-[var(--ds-font-size-md)] font-semibold mb-2">相关链接</h3>
                 <div className="space-y-1">
                   {selectedTask.links.map((link, index) => (
                     <div key={index}>
-                      <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">{link.title}</a>
+                      <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-[var(--ds-text-link)] hover:underline text-[var(--ds-font-size-sm)]">{link.title}</a>
                     </div>
                   ))}
                 </div>
@@ -349,30 +349,30 @@ export default function CalendarPage() {
       )}
 
       {selectedRequirement && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        <div className="fixed inset-0 bg-[var(--ds-bg-overlay)] flex items-center justify-center z-50"
              onClick={() => setSelectedRequirement(null)}>
-          <div className="bg-white rounded-lg p-6 max-w-3xl w-full mx-4 max-h-[80vh] overflow-y-auto"
+          <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] p-6 max-w-3xl w-full mx-4 max-h-[80vh] overflow-y-auto shadow-[var(--ds-shadow-overlay)]"
                onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h2 className="text-2xl font-bold">需求：<Link href={`/requirement/${selectedRequirement.id}`} className="text-blue-600 hover:underline">{selectedRequirement.title}</Link></h2>
+                <h2 className="text-[var(--ds-font-size-xl)] font-bold">需求：<Link href={`/requirement/${selectedRequirement.id}`} className="text-[var(--ds-text-link)] hover:underline">{selectedRequirement.title}</Link></h2>
                 {selectedRequirement.startDate && selectedRequirement.endDate && (
-                  <p className="text-gray-600 mt-1">
+                  <p className="text-[var(--ds-text-secondary)] mt-1">
                     {formatDateBeijing(selectedRequirement.startDate)} - {formatDateBeijing(selectedRequirement.endDate)}
                   </p>
                 )}
               </div>
               <button onClick={() => setSelectedRequirement(null)}
-                      className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+                      className="text-[var(--ds-text-disabled)] hover:text-[var(--ds-text-primary)] text-2xl">×</button>
             </div>
 
             {selectedRequirement.links.length > 0 && (
               <div className="mt-4">
-                <h3 className="text-lg font-semibold mb-2">相关链接</h3>
+                <h3 className="text-[var(--ds-font-size-md)] font-semibold mb-2">相关链接</h3>
                 <div className="space-y-1">
                   {selectedRequirement.links.map((link, index) => (
                     <div key={index}>
-                      <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">{link.title}</a>
+                      <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-[var(--ds-text-link)] hover:underline text-[var(--ds-font-size-sm)]">{link.title}</a>
                     </div>
                   ))}
                 </div>
@@ -380,7 +380,7 @@ export default function CalendarPage() {
             )}
 
             <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-4">相关人员</h3>
+              <h3 className="text-[var(--ds-font-size-md)] font-semibold mb-4">相关人员</h3>
 
               {/* 按职能分组显示 */}
               {roleOrder.map(role => {
@@ -392,18 +392,18 @@ export default function CalendarPage() {
 
                 return (
                   <div key={role} className="mb-6">
-                    <div className="text-md font-semibold text-gray-700 mb-2 bg-gray-100 px-3 py-2 rounded">
+                    <div className="text-[var(--ds-font-size-sm)] font-semibold text-[var(--ds-text-secondary)] mb-2 bg-[var(--ds-bg-hover)] px-3 py-2 rounded-[var(--ds-radius-sm)]">
                       {roleLabels[role]}
                     </div>
                     <div className="space-y-2 pl-4">
                       {rolePersonnel.map(person => (
-                        <div key={person.userId} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                        <div key={person.userId} className="flex items-center justify-between p-3 bg-[var(--ds-bg-page)] rounded-[var(--ds-radius-sm)]">
                           <Link href={`/person/${person.userId}`}
-                                className="text-blue-600 hover:underline font-medium">
+                                className="text-[var(--ds-text-link)] hover:underline font-medium">
                             {person.userName}
                           </Link>
-                          <div className="text-sm text-gray-600">
-                            正在做：{person.currentTask || <span className="text-gray-400">无</span>}
+                          <div className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)]">
+                            正在做：{person.currentTask || <span className="text-[var(--ds-text-disabled)]">无</span>}
                           </div>
                         </div>
                       ))}
@@ -413,7 +413,7 @@ export default function CalendarPage() {
               })}
 
               {selectedRequirement.personnel.length === 0 && (
-                <div className="text-gray-400 text-center py-8">
+                <div className="text-[var(--ds-text-disabled)] text-center py-8">
                   暂无相关人员
                 </div>
               )}
@@ -422,52 +422,60 @@ export default function CalendarPage() {
         </div>
       )}
 
-      <div className="max-w-[1600px] mx-auto">
+      <div>
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <Link href="/team" className="text-blue-600 hover:underline">
-              ← 返回团队视图
-            </Link>
-            <h1 className="text-3xl font-bold text-gray-900">
-              周视图 - {weekLabel}
-            </h1>
-          </div>
+          <h1 className="text-[var(--ds-font-size-xxl)] font-bold text-[var(--ds-text-primary)]">
+            日历视图 <span className="text-[var(--ds-font-size-lg)] font-normal text-[var(--ds-text-secondary)]">- {weekLabel}</span>
+          </h1>
           <div className="flex gap-2">
             <button
               onClick={() => changeWeek(-1)}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              className="px-3 py-1.5 text-[var(--ds-font-size-sm)] border border-[var(--ds-border-default)] rounded-[var(--ds-radius-md)] hover:bg-[var(--ds-bg-hover)] transition-colors"
             >
-              上周
+              ← 上周
+            </button>
+            <button
+              onClick={() => {
+                setCurrentWeekStart(getWeekStart(new Date()))
+              }}
+              className="px-3 py-1.5 text-[var(--ds-font-size-sm)] bg-[var(--ds-brand-primary)] text-white rounded-[var(--ds-radius-md)] hover:bg-[var(--ds-brand-primary-hover)] transition-colors"
+            >
+              本周
             </button>
             <button
               onClick={() => changeWeek(1)}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              className="px-3 py-1.5 text-[var(--ds-font-size-sm)] border border-[var(--ds-border-default)] rounded-[var(--ds-radius-md)] hover:bg-[var(--ds-bg-hover)] transition-colors"
             >
-              下周
+              下周 →
             </button>
           </div>
         </div>
 
         {/* Week Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] shadow-[var(--ds-shadow-card)] overflow-hidden">
           {/* Table Header */}
-          <div className="grid grid-cols-8 border-b bg-gray-50">
-            <div className="p-3 font-semibold text-gray-700 border-r">
-              人员
+          <div className="grid grid-cols-8 border-b border-[var(--ds-border-default)]">
+            <div className="p-3 font-semibold text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)] border-r border-[var(--ds-border-default)] bg-[var(--ds-bg-hover)]">
+              成员
             </div>
             {weekDays.map((day, index) => {
               const weekDayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
               const todayHighlight = isToday(day)
+              const isWeekend = index >= 5
               return (
                 <div
                   key={index}
-                  className={`p-3 text-center font-semibold ${
-                    todayHighlight ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
+                  className={`p-3 text-center border-r border-[var(--ds-border-default)] last:border-r-0 ${
+                    todayHighlight
+                      ? 'bg-[var(--ds-brand-primary)] text-white'
+                      : isWeekend
+                        ? 'bg-[var(--ds-bg-page)] text-[var(--ds-text-disabled)]'
+                        : 'bg-[var(--ds-bg-hover)] text-[var(--ds-text-secondary)]'
                   }`}
                 >
-                  <div>{weekDayNames[index]}</div>
-                  <div className="text-sm font-normal">
+                  <div className="font-semibold text-[var(--ds-font-size-sm)]">{weekDayNames[index]}</div>
+                  <div className={`text-[var(--ds-font-size-xs)] ${todayHighlight ? 'text-white/80' : ''}`}>
                     {day.getMonth() + 1}/{day.getDate()}
                   </div>
                 </div>
@@ -481,20 +489,22 @@ export default function CalendarPage() {
             if (roleUsers.length === 0) return null
 
             return (
-              <div key={role} className="border-b last:border-b-0">
+              <div key={role} className="border-b border-[var(--ds-border-default)] last:border-b-0">
                 {/* Role Header Row */}
-                <div className="bg-gray-100 px-4 py-2 font-semibold text-gray-700 border-b">
-                  {roleLabels[role]}
+                <div className="bg-[var(--ds-bg-page)] px-4 py-2 border-b border-[var(--ds-border-default)] flex items-center gap-2">
+                  <div className="w-1.5 h-4 rounded-full bg-[var(--ds-brand-primary)]"></div>
+                  <span className="font-semibold text-[var(--ds-font-size-sm)] text-[var(--ds-text-primary)]">{roleLabels[role]}</span>
+                  <span className="text-[var(--ds-font-size-xs)] text-[var(--ds-text-disabled)] bg-[var(--ds-bg-hover)] px-1.5 py-0.5 rounded">{roleUsers.length}</span>
                 </div>
 
                 {/* User Rows */}
                 {roleUsers.map(user => (
-                  <div key={user.id} className="grid grid-cols-8 border-b last:border-b-0 hover:bg-gray-50">
+                  <div key={user.id} className="grid grid-cols-8 border-b border-[var(--ds-border-default)] last:border-b-0 hover:bg-[var(--ds-bg-hover)]/30 transition-colors">
                     {/* Person Name Cell */}
-                    <div className="p-3 border-r">
+                    <div className="p-3 border-r border-[var(--ds-border-default)] flex items-center">
                       <Link
                         href={`/person/${user.id}`}
-                        className="text-blue-600 hover:underline font-medium"
+                        className="text-[var(--ds-text-link)] hover:underline font-medium text-[var(--ds-font-size-sm)]"
                       >
                         {user.name}
                       </Link>
@@ -504,30 +514,41 @@ export default function CalendarPage() {
                     {weekDays.map((day, dayIndex) => {
                       const task = getHighestPriorityTaskForDate(user.id, day)
                       const isTodayCell = isToday(day)
+                      const isWeekend = dayIndex >= 5
 
                       return (
                         <div
                           key={dayIndex}
-                          className={`p-2 min-h-[60px] ${
-                            isTodayCell ? 'bg-blue-50' : ''
+                          className={`p-2 min-h-[70px] border-r border-[var(--ds-border-default)] last:border-r-0 ${
+                            isTodayCell
+                              ? 'bg-[var(--ds-bg-selected)]'
+                              : isWeekend
+                                ? 'bg-[var(--ds-bg-page)]/50'
+                                : ''
                           }`}
                         >
                           {task ? (
                             <div className="relative group">
                               <div
                                 onClick={() => openTaskModal(task)}
-                                className={`text-xs p-2 rounded block cursor-pointer ${
+                                className={`text-[var(--ds-font-size-xs)] p-2 rounded-[var(--ds-radius-sm)] block cursor-pointer transition-all hover:shadow-sm ${
                                   task.type === 'IN_REQUIREMENT'
-                                    ? 'bg-blue-100 hover:bg-blue-200'
-                                    : 'bg-green-100 hover:bg-green-200'
+                                    ? 'bg-[var(--ds-status-info-bg)] hover:bg-[#DEEBFF] border-l-3 border-l-[var(--ds-brand-primary)]'
+                                    : 'bg-[var(--ds-status-success-bg)] hover:bg-[#ABF5D1] border-l-3 border-l-[var(--ds-status-success)]'
                                 }`}
                                 title={formatTaskTitle(task)}
                               >
-                                <div className="font-medium truncate">
+                                <div className="font-medium truncate text-[var(--ds-text-primary)]">
                                   {formatTaskTitle(task)}
                                 </div>
-                                <div className="text-gray-600 mt-1">
-                                  优先级: {task.priority}
+                                <div className="text-[var(--ds-text-secondary)] mt-1 flex items-center gap-1">
+                                  <span className={`inline-block w-2 h-2 rounded-full ${
+                                    task.priority === 0 ? 'bg-[var(--ds-priority-highest)]' :
+                                    task.priority === 1 ? 'bg-[var(--ds-priority-high)]' :
+                                    task.priority === 2 ? 'bg-[var(--ds-priority-medium)]' :
+                                    'bg-[var(--ds-priority-low)]'
+                                  }`}></span>
+                                  P{task.priority}
                                 </div>
                               </div>
                               <button
@@ -535,14 +556,14 @@ export default function CalendarPage() {
                                   e.stopPropagation()
                                   handleDeleteTask(task.id)
                                 }}
-                                className="absolute top-0 right-0 px-1.5 py-0.5 bg-red-100 text-red-700 rounded-bl rounded-tr text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-[var(--ds-status-error)] text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
                                 title="删除任务"
                               >
                                 ×
                               </button>
                             </div>
                           ) : (
-                            <div className="text-gray-400 text-xs text-center pt-4">
+                            <div className="text-[var(--ds-text-disabled)] text-[var(--ds-font-size-xs)] text-center pt-5">
                               -
                             </div>
                           )}
@@ -557,7 +578,7 @@ export default function CalendarPage() {
         </div>
 
         {users.length === 0 && (
-          <div className="mt-6 text-center text-gray-500">
+          <div className="mt-6 text-center py-12 text-[var(--ds-text-disabled)]">
             还没有团队成员，请先添加
           </div>
         )}

@@ -47,19 +47,7 @@ export function TopBar({ onToggleSidebar }: TopBarProps) {
           </svg>
         </button>
 
-        {/* Logo */}
-        <Link href="/projects" className="flex items-center gap-2 text-[var(--ds-text-inverse)] hover:no-underline">
-          <svg
-            width="28"
-            height="28"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-          >
-            <path d="M11.59 5.53L5.1 12H19.9L13.41 5.53C12.63 4.76 12.37 4.76 11.59 5.53Z" />
-            <path d="M5.1 12L11.59 18.47C12.37 19.24 12.63 19.24 13.41 18.47L19.9 12H5.1Z" opacity="0.7" />
-          </svg>
-        </Link>
-      </div>
+              </div>
     </header>
   )
 }
