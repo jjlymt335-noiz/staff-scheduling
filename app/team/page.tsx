@@ -208,7 +208,7 @@ export default function TeamPage() {
             <Button variant="secondary" size="sm">+ 添加任务</Button>
           </Link>
           <Link href="/setup">
-            <Button variant="ghost" size="sm">+ 添加成员</Button>
+            <Button variant="outline" size="sm">+ 添加成员</Button>
           </Link>
         </div>
       </div>
