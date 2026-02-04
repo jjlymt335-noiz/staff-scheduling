@@ -601,7 +601,7 @@ export default function ProjectsPage() {
             + 添加项目
           </Link>
           <Link
-            href="/manage"
+            href="/requirement/new"
             className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
           >
             + 添加需求
