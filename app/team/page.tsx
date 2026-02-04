@@ -12,6 +12,7 @@ interface User {
 
 interface Task {
   id: string
+  code: string
   title: string
   type: string
   priority: number
@@ -21,9 +22,11 @@ interface Task {
   actualEndDate: string | null
   requirement: {
     id: string
+    code?: string
     title: string
     project: {
       id: string
+      code?: string
       title: string
     } | null
   } | null
@@ -168,19 +171,20 @@ export default function TeamPage() {
     return effectiveEnd > planEnd
   }
 
-  // 格式化任务显示文本（项目-需求-任务）
+  // 格式化任务显示文本（编号-项目-需求-任务）
   const formatTaskText = (task: Task) => {
+    const code = task.code ? `[${task.code}] ` : ''
     if (task.type === 'IN_REQUIREMENT' && task.requirement) {
       if (task.requirement.project) {
-        // 有项目和需求：项目-需求-任务
-        return `${task.requirement.project.title}-${task.requirement.title}-${task.title}`
+        // 有项目和需求：编号 项目-需求-任务
+        return `${code}${task.requirement.project.title}-${task.requirement.title}-${task.title}`
       } else {
-        // 只有需求：需求-任务
-        return `${task.requirement.title}-${task.title}`
+        // 只有需求：编号 需求-任务
+        return `${code}${task.requirement.title}-${task.title}`
       }
     }
-    // 独立任务：只显示任务名
-    return task.title
+    // 独立任务：编号 任务名
+    return `${code}${task.title}`
   }
 
   // 按职能分组用户

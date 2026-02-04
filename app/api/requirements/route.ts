@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getNextRequirementCode } from '@/lib/codeGenerator'
 
 // GET /api/requirements - 获取所有需求
 export async function GET() {
@@ -100,8 +101,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 获取下一个编号
+    const { code, seqNumber } = await getNextRequirementCode()
+
     const requirement = await prisma.requirement.create({
       data: {
+        code,
+        seqNumber,
         title,
         priority,
         projectId: projectId || null,

@@ -58,6 +58,22 @@ export async function GET(
           include: {
             project: true as any
           }
+        },
+        // 包含前置任务信息
+        predecessors: {
+          include: {
+            predecessor: {
+              select: {
+                id: true,
+                code: true,
+                title: true,
+                status: true,
+                planStartDate: true,
+                planEndDate: true,
+                user: { select: { id: true, name: true } }
+              }
+            }
+          }
         }
       }
     })

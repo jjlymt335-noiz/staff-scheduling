@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { calculatePlanEndDate } from '@/lib/workday'
 import { checkTaskOverlap, getOverlapEndTime } from '@/lib/taskUtils'
+import { getNextTaskCode } from '@/lib/codeGenerator'
 
 // GET /api/tasks - 获取所有任务
 export async function GET() {
@@ -15,6 +16,20 @@ export async function GET() {
             project: true as any,
           },
         },
+        // 包含前置任务信息
+        predecessors: {
+          include: {
+            predecessor: {
+              select: {
+                id: true,
+                code: true,
+                title: true,
+                status: true,
+                user: { select: { id: true, name: true } }
+              }
+            }
+          }
+        }
       },
     })
     return NextResponse.json(tasks)
@@ -91,6 +106,7 @@ export async function POST(request: NextRequest) {
       forecastEndDate,
       status,
       links,
+      predecessorIds,  // 前置任务ID数组
     } = body
 
     // 验证必填字段
@@ -290,9 +306,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 获取下一个编号
+    const { code, seqNumber } = await getNextTaskCode()
+
     // 创建任务
     const task = await prisma.task.create({
       data: {
+        code,
+        seqNumber,
         title,
         type,
         requirementId: type === 'IN_REQUIREMENT' ? requirementId : null,
@@ -313,7 +334,39 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(task, { status: 201 })
+    // 如果有前置任务，创建依赖关系
+    if (predecessorIds && Array.isArray(predecessorIds) && predecessorIds.length > 0) {
+      await prisma.taskDependency.createMany({
+        data: predecessorIds.map((predecessorId: string) => ({
+          predecessorId,
+          successorId: task.id,
+        })),
+        skipDuplicates: true,
+      })
+    }
+
+    // 重新查询包含前置任务信息
+    const taskWithPredecessors = await prisma.task.findUnique({
+      where: { id: task.id },
+      include: {
+        user: true,
+        requirement: true,
+        predecessors: {
+          include: {
+            predecessor: {
+              select: {
+                id: true,
+                code: true,
+                title: true,
+                status: true,
+              }
+            }
+          }
+        }
+      },
+    })
+
+    return NextResponse.json(taskWithPredecessors, { status: 201 })
   } catch (error) {
     console.error('Error creating task:', error)
     return NextResponse.json(

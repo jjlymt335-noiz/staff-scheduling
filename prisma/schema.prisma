@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -22,6 +23,8 @@ model User {
 
 model Project {
   id           String        @id @default(cuid())
+  code         String        @unique  // 编号：P-001, P-002, ...
+  seqNumber    Int           @unique  // 序列号（应用层管理）
   title        String
   description  String?
   priority     Int           // 0-5, 0 is highest priority
@@ -35,6 +38,8 @@ model Project {
 
 model Requirement {
   id        String   @id @default(cuid())
+  code      String   @unique  // 编号：R-001, R-002, ...
+  seqNumber Int      @unique  // 序列号（应用层管理）
   title     String
   priority  Int      // 0-5, 0 is highest priority
   projectId String?
@@ -75,6 +80,8 @@ model StageAssignment {
 
 model Task {
   id                String    @id @default(cuid())
+  code              String    @unique  // 编号：T-001, T-002, ...
+  seqNumber         Int       @unique  // 序列号（应用层管理）
   title             String
   type              String    // IN_REQUIREMENT, STANDALONE
   requirementId     String?
@@ -93,6 +100,24 @@ model Task {
   links             String?   // JSON array of links (max 5), format: [{"title": "...", "url": "..."}]
   remarks           String?
   createdAt         DateTime  @default(now())
+
+  // 前置任务关系（多对多自引用）
+  predecessors      TaskDependency[] @relation("SuccessorTask")
+  successors        TaskDependency[] @relation("PredecessorTask")
+}
+
+// 任务依赖关系表
+model TaskDependency {
+  id              String   @id @default(cuid())
+  predecessorId   String   // 前置任务ID
+  successorId     String   // 后置任务ID
+  predecessor     Task     @relation("PredecessorTask", fields: [predecessorId], references: [id], onDelete: Cascade)
+  successor       Task     @relation("SuccessorTask", fields: [successorId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+
+  @@unique([predecessorId, successorId])  // 防止重复依赖
+  @@index([predecessorId])
+  @@index([successorId])
 }
 
 model BrainstormItem {

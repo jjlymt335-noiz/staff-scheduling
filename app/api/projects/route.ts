@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getNextProjectCode } from '@/lib/codeGenerator'
 
 // GET /api/projects - 获取所有项目及其需求、阶段信息
 export async function GET() {
@@ -39,8 +40,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
     }
 
+    // 获取下一个编号
+    const { code, seqNumber } = await getNextProjectCode()
+
     const project = await prisma.project.create({
       data: {
+        code,
+        seqNumber,
         title,
         description,
         priority: priority ?? 0,
