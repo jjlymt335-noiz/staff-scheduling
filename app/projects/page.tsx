@@ -1057,7 +1057,13 @@ export default function ProjectsPage() {
               <span className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)] w-40">
                 {formatDate(task.planStartDate)} ~ {formatDate(task.planEndDate)}
               </span>
-              <AssigneeAvatar users={[{ id: task.user.id, name: task.user.name }]} size="sm" />
+              <Link
+                href={`/person/${task.user.id}`}
+                className="flex items-center gap-2 text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-brand-primary)]"
+              >
+                <AssigneeAvatar users={[{ id: task.user.id, name: task.user.name }]} size="sm" />
+                <span>{task.user.name}</span>
+              </Link>
               <button
                 onClick={() => handleDeleteTask(task.id)}
                 className="p-1.5 text-[var(--ds-text-secondary)] hover:text-[var(--ds-status-error)] hover:bg-[var(--ds-status-error-bg)] rounded transition-colors"
