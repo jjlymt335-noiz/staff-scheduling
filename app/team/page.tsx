@@ -152,16 +152,10 @@ export default function TeamPage() {
         return a.priority - b.priority
       })
 
-    // 根据并发任务规则确定显示逻辑
-    if (todayTasks.length === 2) {
-      // 2个并发任务 - 都显示为"当前任务"，"下一个任务"为空
-      return { currentTasks: todayTasks, nextTasks: [] }
-    } else if (todayTasks.length === 1) {
-      // 1个任务 - 显示为"当前任务"，显示未来任务为"下一个任务"
-      return { currentTasks: todayTasks, nextTasks: futureTasks.slice(0, 3) }
-    } else {
-      // 没有当前任务 - 显示未来任务
-      return { currentTasks: [], nextTasks: futureTasks.slice(0, 3) }
+    // 返回当前任务和下一个任务（始终显示未来任务）
+    return {
+      currentTasks: todayTasks.slice(0, 2), // 最多显示2个当前任务
+      nextTasks: futureTasks.slice(0, 3)    // 最多显示3个未来任务
     }
   }
 

@@ -11,6 +11,14 @@ interface User {
   role: string
 }
 
+interface PredecessorTask {
+  id: string
+  code: string
+  title: string
+  status: string
+  user?: { id: string; name: string }
+}
+
 export default function NewRequirementPage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="text-gray-600">加载中...</div></div>}>
@@ -41,6 +49,9 @@ function NewRequirementPageContent() {
     startTimeSlot: string
     durationWorkdays: number
     endTimeSlot: string
+    predecessorId?: string
+    predecessorCode?: string
+    predecessorTitle?: string
   }>>([])
 
   const [currentTaskInput, setCurrentTaskInput] = useState({
@@ -52,6 +63,12 @@ function NewRequirementPageContent() {
     durationWorkdays: 1,
     endTimeSlot: 'AFTERNOON',
   })
+
+  // 前置任务相关状态
+  const [predecessorSearch, setPredecessorSearch] = useState('')
+  const [predecessorResults, setPredecessorResults] = useState<PredecessorTask[]>([])
+  const [selectedPredecessor, setSelectedPredecessor] = useState<PredecessorTask | null>(null)
+  const [searchingPredecessor, setSearchingPredecessor] = useState(false)
 
   useEffect(() => {
     fetchUsers()
@@ -67,6 +84,37 @@ function NewRequirementPageContent() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // 搜索前置任务
+  const searchPredecessors = async (query: string) => {
+    if (!query.trim()) {
+      setPredecessorResults([])
+      return
+    }
+    setSearchingPredecessor(true)
+    try {
+      const res = await fetch(`/api/tasks/search?q=${encodeURIComponent(query)}`)
+      const data = await res.json()
+      const filtered = data.filter((t: PredecessorTask) =>
+        selectedPredecessor?.id !== t.id
+      )
+      setPredecessorResults(filtered)
+    } catch (error) {
+      console.error('Failed to search predecessors:', error)
+    } finally {
+      setSearchingPredecessor(false)
+    }
+  }
+
+  const selectPredecessor = (task: PredecessorTask) => {
+    setSelectedPredecessor(task)
+    setPredecessorSearch('')
+    setPredecessorResults([])
+  }
+
+  const removePredecessor = () => {
+    setSelectedPredecessor(null)
   }
 
   const handleAddTaskToRequirement = () => {
@@ -91,7 +139,12 @@ function NewRequirementPageContent() {
       }
     }
 
-    setRequirementTasks([...requirementTasks, { ...currentTaskInput }])
+    setRequirementTasks([...requirementTasks, {
+      ...currentTaskInput,
+      predecessorId: selectedPredecessor?.id,
+      predecessorCode: selectedPredecessor?.code,
+      predecessorTitle: selectedPredecessor?.title,
+    }])
     setCurrentTaskInput({
       title: '',
       userId: '',
@@ -101,6 +154,7 @@ function NewRequirementPageContent() {
       durationWorkdays: 1,
       endTimeSlot: 'AFTERNOON',
     })
+    setSelectedPredecessor(null)
   }
 
   const handleRemoveTaskFromRequirement = (index: number) => {
@@ -136,9 +190,16 @@ function NewRequirementPageContent() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              ...task,
+              title: task.title,
+              userId: task.userId,
+              priority: task.priority,
+              planStartDate: task.planStartDate,
+              startTimeSlot: task.startTimeSlot,
+              durationWorkdays: task.durationWorkdays,
+              endTimeSlot: task.endTimeSlot,
               type: 'IN_REQUIREMENT',
               requirementId: createdRequirement.id,
+              predecessorIds: task.predecessorId ? [task.predecessorId] : [],
             })
           })
         )
@@ -266,6 +327,7 @@ function NewRequirementPageContent() {
                           优先级: {task.priority} |
                           开始: {task.planStartDate} |
                           时长: {task.durationWorkdays}工作日
+                          {task.predecessorCode && ` | 前置: [${task.predecessorCode}] ${task.predecessorTitle}`}
                         </div>
                       </div>
                       <button
@@ -372,6 +434,57 @@ function NewRequirementPageContent() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                     />
                   </div>
+                </div>
+
+                {/* 前置任务选择 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    前置任务（可选）
+                  </label>
+                  {selectedPredecessor ? (
+                    <div className="flex items-center gap-2 p-2 bg-white rounded text-sm border border-blue-200">
+                      <span className="font-mono text-blue-600">{selectedPredecessor.code}</span>
+                      <span className="flex-1 truncate">{selectedPredecessor.title}</span>
+                      <button
+                        type="button"
+                        onClick={removePredecessor}
+                        className="text-red-600 hover:text-red-800 text-xs"
+                      >
+                        移除
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="搜索任务（按名称或编号）..."
+                        value={predecessorSearch}
+                        onChange={(e) => {
+                          setPredecessorSearch(e.target.value)
+                          searchPredecessors(e.target.value)
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      />
+                      {searchingPredecessor && (
+                        <div className="absolute right-3 top-2 text-gray-400 text-xs">搜索中...</div>
+                      )}
+                      {predecessorResults.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                          {predecessorResults.map((task) => (
+                            <div
+                              key={task.id}
+                              onClick={() => selectPredecessor(task)}
+                              className="px-3 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2 text-sm"
+                            >
+                              <span className="font-mono text-blue-600">{task.code}</span>
+                              <span className="flex-1 truncate">{task.title}</span>
+                              {task.user && <span className="text-gray-500 text-xs">{task.user.name}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <button
