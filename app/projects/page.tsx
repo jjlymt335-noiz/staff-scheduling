@@ -109,6 +109,11 @@ export default function ProjectsPage() {
   const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set())
   const [expandedRequirements, setExpandedRequirements] = useState<Set<string>>(new Set())
+  const [collapsedSections, setCollapsedSections] = useState<{ projects: boolean; requirements: boolean; tasks: boolean }>({
+    projects: false,
+    requirements: false,
+    tasks: false
+  })
 
   const roleOrder = ['MANAGEMENT', 'FRONTEND', 'BACKEND', 'PRODUCT', 'OPERATIONS', 'STRATEGY']
   const roleLabels: Record<string, string> = {
@@ -541,7 +546,42 @@ export default function ProjectsPage() {
         <h1 className="text-[var(--ds-font-size-xxl)] font-bold text-[var(--ds-text-primary)]">项目视图</h1>
       </div>
 
+      {/* 收起/展开按钮 */}
+      <div className="flex gap-2 mb-4">
+        <button
+          className={`px-3 py-1.5 text-[var(--ds-font-size-sm)] rounded-[var(--ds-radius-md)] border transition-colors ${
+            !collapsedSections.projects
+              ? 'bg-[var(--ds-bg-card)] text-[var(--ds-text-primary)] border-[var(--ds-border-default)] shadow-sm'
+              : 'bg-[var(--ds-bg-hover)] text-[var(--ds-text-secondary)] border-transparent hover:text-[var(--ds-text-primary)]'
+          }`}
+          onClick={() => setCollapsedSections(s => ({ ...s, projects: !s.projects }))}
+        >
+          {collapsedSections.projects ? '展开项目' : '收起项目'}
+        </button>
+        <button
+          className={`px-3 py-1.5 text-[var(--ds-font-size-sm)] rounded-[var(--ds-radius-md)] border transition-colors ${
+            !collapsedSections.requirements
+              ? 'bg-[var(--ds-bg-card)] text-[var(--ds-text-primary)] border-[var(--ds-border-default)] shadow-sm'
+              : 'bg-[var(--ds-bg-hover)] text-[var(--ds-text-secondary)] border-transparent hover:text-[var(--ds-text-primary)]'
+          }`}
+          onClick={() => setCollapsedSections(s => ({ ...s, requirements: !s.requirements }))}
+        >
+          {collapsedSections.requirements ? '展开独立需求' : '收起独立需求'}
+        </button>
+        <button
+          className={`px-3 py-1.5 text-[var(--ds-font-size-sm)] rounded-[var(--ds-radius-md)] border transition-colors ${
+            !collapsedSections.tasks
+              ? 'bg-[var(--ds-bg-card)] text-[var(--ds-text-primary)] border-[var(--ds-border-default)] shadow-sm'
+              : 'bg-[var(--ds-bg-hover)] text-[var(--ds-text-secondary)] border-transparent hover:text-[var(--ds-text-primary)]'
+          }`}
+          onClick={() => setCollapsedSections(s => ({ ...s, tasks: !s.tasks }))}
+        >
+          {collapsedSections.tasks ? '展开独立任务' : '收起独立任务'}
+        </button>
+      </div>
+
       {/* 项目列表 */}
+      {!collapsedSections.projects && (
       <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] shadow-[var(--ds-shadow-card)] overflow-hidden">
         {/* 表头 */}
         {sortedProjects.length > 0 && (
@@ -956,9 +996,10 @@ export default function ProjectsPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* 独立需求 */}
-      {standaloneRequirements.length > 0 && (
+      {!collapsedSections.requirements && standaloneRequirements.length > 0 && (
         <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] shadow-[var(--ds-shadow-card)] overflow-hidden mt-6">
           <div className="px-4 py-3 bg-[var(--ds-bg-hover)] border-b border-[var(--ds-border-default)]">
             <h2 className="text-[var(--ds-font-size-md)] font-semibold text-[var(--ds-text-primary)]">独立需求</h2>
@@ -995,7 +1036,7 @@ export default function ProjectsPage() {
       )}
 
       {/* 独立任务 */}
-      {standaloneTasks.length > 0 && (
+      {!collapsedSections.tasks && standaloneTasks.length > 0 && (
         <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] shadow-[var(--ds-shadow-card)] overflow-hidden mt-6">
           <div className="px-4 py-3 bg-[var(--ds-bg-hover)] border-b border-[var(--ds-border-default)]">
             <h2 className="text-[var(--ds-font-size-md)] font-semibold text-[var(--ds-text-primary)]">独立任务（进行中）</h2>
