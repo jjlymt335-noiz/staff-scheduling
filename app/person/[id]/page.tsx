@@ -13,6 +13,7 @@ interface User {
 
 interface Task {
   id: string
+  code?: string
   title: string
   type: string
   priority: number
@@ -23,6 +24,7 @@ interface Task {
   actualEndDate: string | null
   status: string
   requirement: {
+    code?: string
     title: string
   } | null
 }
@@ -161,10 +163,12 @@ export default function PersonPage() {
 
   // 格式化任务标题
   const formatTaskTitle = (task: Task) => {
+    const codePrefix = task.code ? `[${task.code}] ` : ''
     if (task.type === 'IN_REQUIREMENT' && task.requirement) {
-      return `需求：${task.requirement.title}的 任务：${task.title}`
+      const reqCode = task.requirement.code ? `[${task.requirement.code}] ` : ''
+      return `需求：${reqCode}${task.requirement.title}的 任务：${codePrefix}${task.title}`
     }
-    return task.title
+    return `${codePrefix}${task.title}`
   }
 
   // 格式化日期

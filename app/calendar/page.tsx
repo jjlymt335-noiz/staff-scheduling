@@ -182,10 +182,11 @@ export default function CalendarPage() {
   const isToday = (date: Date) => isBeijingToday(date)
 
   const formatTaskTitle = (task: Task) => {
+    const codePrefix = task.code ? `[${task.code}] ` : ''
     if (task.type === 'IN_REQUIREMENT' && task.requirement) {
-      return `${task.requirement.title}-${task.title}`
+      return `${codePrefix}${task.requirement.title}-${task.title}`
     }
-    return task.title
+    return `${codePrefix}${task.title}`
   }
 
   const openTaskModal = (task: Task) => {

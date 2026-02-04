@@ -28,11 +28,13 @@ interface Stage {
 
 interface Task {
   id: string
+  code?: string
   status: string
 }
 
 interface Requirement {
   id: string
+  code?: string
   title: string
   priority: number
   projectId: string | null
@@ -45,6 +47,7 @@ interface Requirement {
 
 interface Project {
   id: string
+  code?: string
   title: string
   description: string | null
   priority: number
@@ -55,6 +58,7 @@ interface Project {
 
 interface StandaloneTask {
   id: string
+  code?: string
   title: string
   priority: number
   requirementId: string | null
@@ -328,24 +332,12 @@ export default function ProjectsPage() {
     a.title.localeCompare(b.title, 'zh-CN')
   )
 
-  // 获取独立进行中的需求（不属于任何项目）
-  const getStandaloneInProgressRequirements = () => {
-    const today = getBeijingToday()
-
+  // 获取所有独立需求（不属于任何项目）
+  const getStandaloneRequirements = (): Requirement[] => {
     return requirements
       .filter(req => {
         // 必须不属于任何项目
-        if (req.projectId) return false
-
-        // 检查是否有任务正在进行中
-        const reqTasks = tasks.filter(t => t.requirementId === req.id)
-        return reqTasks.some(task => {
-          const startDate = new Date(task.planStartDate)
-          const endDate = new Date(task.planEndDate)
-          startDate.setHours(0, 0, 0, 0)
-          endDate.setHours(0, 0, 0, 0)
-          return today >= startDate && today <= endDate
-        })
+        return !req.projectId
       })
       .sort((a, b) => {
         // 先按优先级排序
@@ -383,7 +375,7 @@ export default function ProjectsPage() {
       })
   }
 
-  const standaloneRequirements = getStandaloneInProgressRequirements()
+  const standaloneRequirements = getStandaloneRequirements()
   const standaloneTasks = getStandaloneInProgressTasks()
 
   // 获取需求的所有相关人员
@@ -685,7 +677,7 @@ export default function ProjectsPage() {
                     <div className="mb-6">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <Link href={`/project/${project.id}`} className="text-2xl font-bold text-gray-900 hover:text-blue-600 hover:underline">{project.title}</Link>
+                          <Link href={`/project/${project.id}`} className="text-2xl font-bold text-gray-900 hover:text-blue-600 hover:underline">{project.code && <span className="text-blue-600">[{project.code}]</span>} {project.title}</Link>
                           {project.description && (
                             <p className="text-gray-600 mt-2">{project.description}</p>
                           )}
@@ -725,7 +717,7 @@ export default function ProjectsPage() {
                     <h3 className="text-lg font-semibold mb-3">当前进行的需求</h3>
                     {currentReq ? (
                       <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                        <Link href={`/requirement/${currentReq.id}`} className="font-medium text-blue-600 hover:underline">{currentReq.title}</Link>
+                        <Link href={`/requirement/${currentReq.id}`} className="font-medium text-blue-600 hover:underline">{currentReq.code && <span>[{currentReq.code}]</span>} {currentReq.title}</Link>
                         {currentReq.startDate && currentReq.endDate && (
                           <div className="text-sm text-gray-600 mt-1">
                             {formatDate(currentReq.startDate)} - {formatDate(currentReq.endDate)}
@@ -743,7 +735,7 @@ export default function ProjectsPage() {
                     <h3 className="text-lg font-semibold mb-3">接下来的需求</h3>
                     {nextReq ? (
                       <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <Link href={`/requirement/${nextReq.id}`} className="font-medium text-blue-600 hover:underline">{nextReq.title}</Link>
+                        <Link href={`/requirement/${nextReq.id}`} className="font-medium text-blue-600 hover:underline">{nextReq.code && <span>[{nextReq.code}]</span>} {nextReq.title}</Link>
                         {nextReq.startDate && nextReq.endDate && (
                           <div className="text-sm text-gray-600 mt-1">
                             {formatDate(nextReq.startDate)} - {formatDate(nextReq.endDate)}
@@ -869,7 +861,7 @@ export default function ProjectsPage() {
           {/* 独立进行中的需求 */}
           {!collapsedSections.requirements && standaloneRequirements.length > 0 && (
             <div className="bg-white rounded-lg shadow p-6 mt-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">独立需求（进行中）</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">独立需求</h2>
               <div className="space-y-3">
                 {standaloneRequirements.map(req => (
                   <div
@@ -878,7 +870,7 @@ export default function ProjectsPage() {
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <Link href={`/requirement/${req.id}`} className="font-medium text-blue-600 hover:underline">{req.title}</Link>
+                        <Link href={`/requirement/${req.id}`} className="font-medium text-blue-600 hover:underline">{req.code && <span>[{req.code}]</span>} {req.title}</Link>
                         {req.startDate && req.endDate && (
                           <div className="text-sm text-gray-600 mt-1">
                             {formatDate(req.startDate)} - {formatDate(req.endDate)}
@@ -918,7 +910,7 @@ export default function ProjectsPage() {
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <Link href={`/task/${task.id}`} className="font-medium text-blue-600 hover:underline">{task.title}</Link>
+                        <Link href={`/task/${task.id}`} className="font-medium text-blue-600 hover:underline">{task.code && <span>[{task.code}]</span>} {task.title}</Link>
                         <div className="text-sm text-gray-600 mt-1">
                           {formatDate(task.planStartDate)} - {formatDate(task.planEndDate)}
                         </div>

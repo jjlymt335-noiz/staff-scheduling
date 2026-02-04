@@ -181,18 +181,20 @@ export default function TeamPage() {
 
   // 格式化任务显示文本（编号-项目-需求-任务）
   const formatTaskText = (task: Task) => {
-    const code = task.code ? `[${task.code}] ` : ''
+    const taskCode = task.code ? `[${task.code}] ` : ''
     if (task.type === 'IN_REQUIREMENT' && task.requirement) {
+      const reqCode = task.requirement.code ? `[${task.requirement.code}] ` : ''
       if (task.requirement.project) {
-        // 有项目和需求：编号 项目-需求-任务
-        return `${code}${task.requirement.project.title}-${task.requirement.title}-${task.title}`
+        const projCode = task.requirement.project.code ? `[${task.requirement.project.code}] ` : ''
+        // 有项目和需求：任务编号 项目编号 项目名-需求编号 需求名-任务名
+        return `${taskCode}${projCode}${task.requirement.project.title}-${reqCode}${task.requirement.title}-${task.title}`
       } else {
-        // 只有需求：编号 需求-任务
-        return `${code}${task.requirement.title}-${task.title}`
+        // 只有需求：任务编号 需求编号 需求名-任务名
+        return `${taskCode}${reqCode}${task.requirement.title}-${task.title}`
       }
     }
     // 独立任务：编号 任务名
-    return `${code}${task.title}`
+    return `${taskCode}${task.title}`
   }
 
   // 按职能分组用户
