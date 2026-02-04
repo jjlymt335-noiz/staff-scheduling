@@ -369,8 +369,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(taskWithPredecessors, { status: 201 })
   } catch (error) {
     console.error('Error creating task:', error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
     return NextResponse.json(
-      { error: 'Failed to create task' },
+      { error: `Failed to create task: ${errorMessage}` },
       { status: 500 }
     )
   }
