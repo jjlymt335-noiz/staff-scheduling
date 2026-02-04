@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { formatDateBeijing } from '@/lib/timezone'
+import { formatDateBeijing, getBeijingToday } from '@/lib/timezone'
 
 interface User {
   id: string
@@ -29,15 +29,6 @@ interface Task {
   } | null
 }
 
-interface BrainstormItem {
-  id: string
-  title: string
-  type: string
-  priority: number
-  planStartDate: string | null
-  planEndDate: string | null
-}
-
 export default function PersonPage() {
   const params = useParams()
   const router = useRouter()
@@ -45,14 +36,7 @@ export default function PersonPage() {
 
   const [user, setUser] = useState<User | null>(null)
   const [allTasks, setAllTasks] = useState<Task[]>([])
-  const [brainstormItems, setBrainstormItems] = useState<BrainstormItem[]>([])
   const [loading, setLoading] = useState(true)
-
-  const [newBrainstorm, setNewBrainstorm] = useState({
-    title: '',
-    type: 'TASK',
-    priority: 0,
-  })
 
   const roleLabels: Record<string, string> = {
     MANAGEMENT: '管理',
@@ -69,15 +53,13 @@ export default function PersonPage() {
 
   const fetchData = async () => {
     try {
-      const [usersRes, tasksRes, brainstormRes] = await Promise.all([
+      const [usersRes, tasksRes] = await Promise.all([
         fetch('/api/users'),
         fetch('/api/tasks'),
-        fetch(`/api/brainstorm?userId=${userId}`),
       ])
 
       const users = await usersRes.json()
       const tasks = await tasksRes.json()
-      const brainstorm = await brainstormRes.json()
 
       const currentUser = users.find((u: User) => u.id === userId)
       if (!currentUser) {
@@ -87,7 +69,6 @@ export default function PersonPage() {
 
       setUser(currentUser)
       setAllTasks(tasks.filter((t: Task) => t.userId === userId))
-      setBrainstormItems(brainstorm)
     } catch (error) {
       console.error('Failed to fetch data:', error)
     } finally {
@@ -95,122 +76,110 @@ export default function PersonPage() {
     }
   }
 
-  // 获取当前任务和接下来的任务（考虑并发任务规则）
-  const getCurrentAndUpcomingTasks = () => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+  // 计算甘特图的日期范围
+  const { dateRange, todayIndex } = useMemo(() => {
+    const today = getBeijingToday()
+    const dates: Date[] = []
 
-    // 获取包含今天的任务
-    const todayTasks = allTasks
-      .filter((task) => {
-        const startDate = new Date(task.planStartDate)
-        startDate.setHours(0, 0, 0, 0)
-
-        let effectiveEnd: Date
-        if (task.actualEndDate) {
-          effectiveEnd = new Date(task.actualEndDate)
-        } else if (task.forecastEndDate) {
-          effectiveEnd = new Date(task.forecastEndDate)
-        } else {
-          effectiveEnd = new Date(task.planEndDate)
-        }
-        effectiveEnd.setHours(0, 0, 0, 0)
-
-        return today >= startDate && today <= effectiveEnd
-      })
-      .sort((a, b) => a.priority - b.priority)
-
-    // 获取未来任务
-    const futureTasks = allTasks
-      .filter((task) => {
-        const startDate = new Date(task.planStartDate)
-        startDate.setHours(0, 0, 0, 0)
-        return startDate > today
-      })
-      .sort((a, b) => a.priority - b.priority)
-
-    // 根据并发任务规则确定显示逻辑
-    if (todayTasks.length === 2) {
-      // 2个并发任务 - 都显示为"当前任务"，"接下来的任务"为空
-      return { currentTasks: todayTasks, upcomingTasks: [] }
-    } else if (todayTasks.length === 1) {
-      // 1个任务 - 显示为"当前任务"，显示未来任务为"接下来的任务"
-      return { currentTasks: todayTasks, upcomingTasks: futureTasks }
-    } else {
-      // 没有当前任务 - 显示未来任务
-      return { currentTasks: [], upcomingTasks: futureTasks }
+    // 显示从今天开始的4周（28天）
+    for (let i = -7; i < 21; i++) {
+      const d = new Date(today)
+      d.setDate(today.getDate() + i)
+      dates.push(d)
     }
+
+    return {
+      dateRange: dates,
+      todayIndex: 7 // 今天在数组中的索引
+    }
+  }, [])
+
+  // 格式化日期为 YYYY-MM-DD
+  const toDateStr = (d: Date) => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
   }
 
-  // 计算延期天数
-  const calculateOverdueDays = (task: Task) => {
-    let effectiveEnd: Date
-    if (task.actualEndDate) {
-      effectiveEnd = new Date(task.actualEndDate)
-    } else if (task.forecastEndDate) {
-      effectiveEnd = new Date(task.forecastEndDate)
-    } else {
-      return 0
+  // 按优先级排序任务（优先级数字小的排前面）
+  const sortedTasks = useMemo(() => {
+    return [...allTasks].sort((a, b) => a.priority - b.priority)
+  }, [allTasks])
+
+  // 计算任务在甘特图中的位置和宽度
+  const getTaskPosition = (task: Task) => {
+    const startStr = toDateStr(dateRange[0])
+    const endStr = toDateStr(dateRange[dateRange.length - 1])
+
+    const taskStart = task.planStartDate.split('T')[0]
+    const taskEnd = task.planEndDate.split('T')[0]
+
+    // 如果任务完全不在显示范围内
+    if (taskEnd < startStr || taskStart > endStr) {
+      return null
     }
 
-    const planEnd = new Date(task.planEndDate)
-    if (effectiveEnd <= planEnd) return 0
+    // 计算开始位置
+    let startIndex = 0
+    for (let i = 0; i < dateRange.length; i++) {
+      if (toDateStr(dateRange[i]) >= taskStart) {
+        startIndex = i
+        break
+      }
+    }
 
-    const diffTime = effectiveEnd.getTime() - planEnd.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays
+    // 计算结束位置
+    let endIndex = dateRange.length - 1
+    for (let i = dateRange.length - 1; i >= 0; i--) {
+      if (toDateStr(dateRange[i]) <= taskEnd) {
+        endIndex = i
+        break
+      }
+    }
+
+    // 确保至少显示1个单位宽度
+    if (startIndex > endIndex) {
+      startIndex = endIndex
+    }
+
+    return {
+      startIndex,
+      endIndex,
+      width: endIndex - startIndex + 1
+    }
   }
 
   // 格式化任务标题
   const formatTaskTitle = (task: Task) => {
-    const codePrefix = task.code ? `[${task.code}] ` : ''
     if (task.type === 'IN_REQUIREMENT' && task.requirement) {
-      const reqCode = task.requirement.code ? `[${task.requirement.code}] ` : ''
-      return `需求：${reqCode}${task.requirement.title}的 任务：${codePrefix}${task.title}`
+      return task.title
     }
-    return `${codePrefix}${task.title}`
+    return task.title
   }
 
-  // 格式化日期
-  const formatDate = (date: string) => {
-    return formatDateBeijing(date)
-  }
-
-  // 添加头脑风暴项
-  const handleAddBrainstorm = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      await fetch('/api/brainstorm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...newBrainstorm,
-          userId,
-        }),
-      })
-      setNewBrainstorm({ title: '', type: 'TASK', priority: 0 })
-      fetchData()
-    } catch (error) {
-      console.error('Failed to add brainstorm item:', error)
+  // 获取优先级颜色
+  const getPriorityColor = (priority: number) => {
+    switch (priority) {
+      case 0: return 'bg-[#FF5630]' // 最高 - 红色
+      case 1: return 'bg-[#FF7452]' // 高 - 橙红
+      case 2: return 'bg-[#FFAB00]' // 中 - 橙色
+      case 3: return 'bg-[#36B37E]' // 低 - 绿色
+      case 4: return 'bg-[#00B8D9]' // 较低 - 青色
+      default: return 'bg-[#6554C0]' // 最低 - 紫色
     }
   }
 
-  // 删除头脑风暴项
-  const handleDeleteBrainstorm = async (id: string) => {
-    try {
-      await fetch(`/api/brainstorm?id=${id}`, {
-        method: 'DELETE',
-      })
-      fetchData()
-    } catch (error) {
-      console.error('Failed to delete brainstorm item:', error)
-    }
+  // 获取优先级文字颜色
+  const getPriorityTextColor = (priority: number) => {
+    if (priority <= 2) return 'text-white'
+    return 'text-white'
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">加载中...</div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-[var(--ds-text-secondary)]">加载中...</div>
       </div>
     )
   }
@@ -219,176 +188,198 @@ export default function PersonPage() {
     return null
   }
 
-  const { currentTasks, upcomingTasks } = getCurrentAndUpcomingTasks()
+  // 计算周信息
+  const getWeekInfo = (date: Date) => {
+    const dayOfWeek = date.getDay()
+    return dayOfWeek === 0 || dayOfWeek === 6
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-5xl mx-auto">
-        <div className="mb-6">
-          <Link href="/team" className="text-blue-600 hover:underline">
-            ← 返回团队视图
+    <div>
+      {/* 返回链接 */}
+      <div className="mb-4">
+        <Link href="/team" className="text-[var(--ds-text-link)] hover:underline text-[var(--ds-font-size-sm)]">
+          ← 返回团队视图
+        </Link>
+      </div>
+
+      {/* 用户信息卡片 */}
+      <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] shadow-[var(--ds-shadow-card)] p-6 mb-6">
+        <h1 className="text-2xl font-bold text-[var(--ds-text-primary)]">
+          {user.name}
+          <span className="ml-3 text-lg font-normal text-[var(--ds-text-secondary)]">
+            {roleLabels[user.role]}
+          </span>
+        </h1>
+      </div>
+
+      {/* 甘特图 */}
+      <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] shadow-[var(--ds-shadow-card)] overflow-hidden">
+        {/* 标题栏 */}
+        <div className="px-4 py-3 border-b border-[var(--ds-border-default)] flex justify-between items-center">
+          <h2 className="text-lg font-semibold text-[var(--ds-text-primary)]">任务路线图</h2>
+          <Link
+            href="/manage"
+            className="text-[var(--ds-text-link)] hover:underline text-[var(--ds-font-size-sm)]"
+          >
+            添加任务
           </Link>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">
-            {user.name}
-            <span className="ml-3 text-lg font-normal text-gray-600">
-              {roleLabels[user.role]}
-            </span>
-          </h1>
-        </div>
+        {sortedTasks.length === 0 ? (
+          <div className="p-8 text-center text-[var(--ds-text-disabled)]">
+            暂无任务
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <div className="min-w-[1200px]">
+              {/* 日期头部 */}
+              <div className="flex border-b border-[var(--ds-border-default)]">
+                {/* 任务名称列 */}
+                <div className="w-[280px] flex-shrink-0 px-4 py-2 bg-[var(--ds-bg-hover)] border-r border-[var(--ds-border-default)]">
+                  <div className="text-[var(--ds-font-size-xs)] font-semibold text-[var(--ds-text-secondary)] uppercase">
+                    任务
+                  </div>
+                </div>
 
-        {/* 当前正在做的任务 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">
-            当前正在做的任务
-          </h2>
-          {currentTasks.length === 0 ? (
-            <p className="text-gray-500">暂无任务</p>
-          ) : (
-            <div className="space-y-3">
-              {currentTasks.map((task) => {
-                const overdueDays = calculateOverdueDays(task)
+                {/* 日期列 */}
+                <div className="flex-1 flex">
+                  {dateRange.map((date, index) => {
+                    const isToday = index === todayIndex
+                    const isWeekend = getWeekInfo(date)
+                    const isFirstOfMonth = date.getDate() === 1
+
+                    return (
+                      <div
+                        key={index}
+                        className={`flex-1 min-w-[32px] text-center py-2 border-r border-[var(--ds-border-default)] last:border-r-0 ${
+                          isToday
+                            ? 'bg-[var(--ds-brand-primary)]'
+                            : isWeekend
+                              ? 'bg-[var(--ds-bg-page)]'
+                              : 'bg-[var(--ds-bg-hover)]'
+                        }`}
+                      >
+                        {isFirstOfMonth && (
+                          <div className={`text-[10px] font-medium ${isToday ? 'text-white' : 'text-[var(--ds-text-secondary)]'}`}>
+                            {date.getMonth() + 1}月
+                          </div>
+                        )}
+                        <div className={`text-[var(--ds-font-size-xs)] font-medium ${
+                          isToday ? 'text-white' : isWeekend ? 'text-[var(--ds-text-disabled)]' : 'text-[var(--ds-text-secondary)]'
+                        }`}>
+                          {date.getDate()}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* 任务行 */}
+              {sortedTasks.map((task) => {
+                const position = getTaskPosition(task)
+
                 return (
                   <div
                     key={task.id}
-                    className="border-l-4 border-blue-500 pl-4 py-2"
+                    className="flex border-b border-[var(--ds-border-default)] last:border-b-0 hover:bg-[var(--ds-bg-hover)]/30 transition-colors"
                   >
-                    <div className="font-medium text-gray-900">
-                      {formatTaskTitle(task)}
-                    </div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      理想结束: {formatDate(task.planEndDate)}
-                      {task.forecastEndDate && (
-                        <span className="ml-3">
-                          现在预计结束: {formatDate(task.forecastEndDate)}
+                    {/* 任务名称 */}
+                    <div className="w-[280px] flex-shrink-0 px-4 py-3 border-r border-[var(--ds-border-default)] flex items-center gap-2">
+                      {/* 优先级标签 */}
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${getPriorityColor(task.priority)} ${getPriorityTextColor(task.priority)}`}>
+                        P{task.priority}
+                      </span>
+
+                      {/* 任务编号 */}
+                      {task.code && (
+                        <span className="text-[var(--ds-font-size-xs)] text-[var(--ds-text-secondary)] font-mono">
+                          {task.code}
                         </span>
                       )}
+
+                      {/* 任务标题 */}
+                      <Link
+                        href={`/task/${task.id}`}
+                        className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-primary)] hover:text-[var(--ds-brand-primary)] truncate"
+                        title={formatTaskTitle(task)}
+                      >
+                        {formatTaskTitle(task)}
+                      </Link>
                     </div>
-                    {overdueDays > 0 && (
-                      <div className="text-red-600 font-bold text-sm mt-1">
-                        延期{overdueDays}天
-                      </div>
-                    )}
+
+                    {/* 甘特条 */}
+                    <div className="flex-1 flex relative">
+                      {dateRange.map((date, index) => {
+                        const isToday = index === todayIndex
+                        const isWeekend = getWeekInfo(date)
+
+                        return (
+                          <div
+                            key={index}
+                            className={`flex-1 min-w-[32px] min-h-[44px] border-r border-[var(--ds-border-default)] last:border-r-0 ${
+                              isToday
+                                ? 'bg-[var(--ds-bg-selected)]'
+                                : isWeekend
+                                  ? 'bg-[var(--ds-bg-page)]/50'
+                                  : ''
+                            }`}
+                          />
+                        )
+                      })}
+
+                      {/* 任务条 */}
+                      {position && (
+                        <div
+                          className={`absolute top-2 h-[28px] rounded-[var(--ds-radius-sm)] ${getPriorityColor(task.priority)} shadow-sm flex items-center px-2 cursor-pointer hover:opacity-90 transition-opacity`}
+                          style={{
+                            left: `calc(${(position.startIndex / dateRange.length) * 100}%)`,
+                            width: `calc(${(position.width / dateRange.length) * 100}%)`,
+                          }}
+                          title={`${task.code ? `[${task.code}] ` : ''}${formatTaskTitle(task)}\n${formatDateBeijing(task.planStartDate)} - ${formatDateBeijing(task.planEndDate)}`}
+                          onClick={() => router.push(`/task/${task.id}`)}
+                        >
+                          <span className={`text-[var(--ds-font-size-xs)] font-medium truncate ${getPriorityTextColor(task.priority)}`}>
+                            {task.code ? `${task.code} ` : ''}{formatTaskTitle(task)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )
               })}
             </div>
-          )}
-        </div>
-
-        {/* 接下来会做的任务 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-900">
-              接下来会做的任务
-            </h2>
-            <Link
-              href="/manage"
-              className="text-blue-600 hover:underline text-sm"
-            >
-              添加需求或任务
-            </Link>
           </div>
-          {upcomingTasks.length === 0 ? (
-            <p className="text-gray-500">暂无任务</p>
-          ) : (
-            <div className="space-y-3">
-              {upcomingTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="border-l-4 border-gray-300 pl-4 py-2"
-                >
-                  <div className="font-medium text-gray-900">
-                    {formatTaskTitle(task)}
-                  </div>
-                  <div className="text-sm text-gray-600 mt-1">
-                    预计开始: {formatDate(task.planStartDate)} | 计划结束:{' '}
-                    {formatDate(task.planEndDate)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        )}
+      </div>
+
+      {/* 图例 */}
+      <div className="mt-4 flex items-center gap-4 text-[var(--ds-font-size-xs)] text-[var(--ds-text-secondary)]">
+        <span className="font-medium">优先级：</span>
+        <div className="flex items-center gap-1">
+          <span className="w-4 h-3 rounded bg-[#FF5630]"></span>
+          <span>P0</span>
         </div>
-
-        {/* 头脑风暴池 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">头脑风暴池</h2>
-
-          <form onSubmit={handleAddBrainstorm} className="mb-6">
-            <div className="flex gap-3">
-              <input
-                type="text"
-                value={newBrainstorm.title}
-                onChange={(e) =>
-                  setNewBrainstorm({ ...newBrainstorm, title: e.target.value })
-                }
-                placeholder="输入想法..."
-                required
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <select
-                value={newBrainstorm.type}
-                onChange={(e) =>
-                  setNewBrainstorm({ ...newBrainstorm, type: e.target.value })
-                }
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="REQUIREMENT">需求</option>
-                <option value="TASK">任务</option>
-              </select>
-              <input
-                type="number"
-                value={newBrainstorm.priority}
-                onChange={(e) =>
-                  setNewBrainstorm({
-                    ...newBrainstorm,
-                    priority: parseInt(e.target.value),
-                  })
-                }
-                min="0"
-                max="5"
-                placeholder="优先级"
-                className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                添加
-              </button>
-            </div>
-          </form>
-
-          <div className="space-y-2">
-            {brainstormItems.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
-              >
-                <div>
-                  <span className="font-medium">{item.title}</span>
-                  <span className="ml-2 text-sm text-gray-600">
-                    [{item.type === 'REQUIREMENT' ? '需求' : '任务'}]
-                  </span>
-                  <span className="ml-2 text-sm text-gray-600">
-                    优先级: {item.priority}
-                  </span>
-                </div>
-                <button
-                  onClick={() => handleDeleteBrainstorm(item.id)}
-                  className="text-red-600 hover:text-red-700 text-sm"
-                >
-                  删除
-                </button>
-              </div>
-            ))}
-            {brainstormItems.length === 0 && (
-              <p className="text-gray-500 text-center py-4">暂无想法</p>
-            )}
-          </div>
+        <div className="flex items-center gap-1">
+          <span className="w-4 h-3 rounded bg-[#FF7452]"></span>
+          <span>P1</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="w-4 h-3 rounded bg-[#FFAB00]"></span>
+          <span>P2</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="w-4 h-3 rounded bg-[#36B37E]"></span>
+          <span>P3</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="w-4 h-3 rounded bg-[#00B8D9]"></span>
+          <span>P4</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="w-4 h-3 rounded bg-[#6554C0]"></span>
+          <span>P5</span>
         </div>
       </div>
     </div>
