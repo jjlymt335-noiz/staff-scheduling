@@ -1,4 +1,4 @@
-import prisma from './prisma'
+import { prisma } from './prisma'
 
 // 编号前缀常量
 export const CODE_PREFIX = {
