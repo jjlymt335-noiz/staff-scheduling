@@ -2,43 +2,41 @@
 
 interface PriorityBadgeProps {
   priority: number
-  showLabel?: boolean
   size?: 'sm' | 'md'
 }
 
 const priorityConfig = [
-  { label: '最高', color: 'var(--ds-priority-highest)', icon: '⬆⬆' },
-  { label: '高', color: 'var(--ds-priority-high)', icon: '⬆' },
-  { label: '中', color: 'var(--ds-priority-medium)', icon: '➡' },
-  { label: '低', color: 'var(--ds-priority-low)', icon: '⬇' },
-  { label: '最低', color: 'var(--ds-priority-lowest)', icon: '⬇⬇' },
-  { label: '无', color: 'var(--ds-text-disabled)', icon: '—' },
+  { label: 'P0', fullLabel: '最高', color: '#FF5630' },
+  { label: 'P1', fullLabel: '高', color: '#FF7452' },
+  { label: 'P2', fullLabel: '中', color: '#FFAB00' },
+  { label: 'P3', fullLabel: '低', color: '#36B37E' },
+  { label: 'P4', fullLabel: '较低', color: '#00B8D9' },
+  { label: 'P5', fullLabel: '最低', color: '#6B778C' },
 ]
 
-export function PriorityBadge({ priority, showLabel = false, size = 'sm' }: PriorityBadgeProps) {
+export function PriorityBadge({ priority, size = 'sm' }: PriorityBadgeProps) {
   const config = priorityConfig[priority] || priorityConfig[5]
 
   const sizeStyles = {
-    sm: 'text-[var(--ds-font-size-sm)] px-1.5 py-0.5',
-    md: 'text-[var(--ds-font-size-md)] px-2 py-1',
+    sm: 'text-[11px] px-1.5 py-0.5 min-w-[28px]',
+    md: 'text-[12px] px-2 py-1 min-w-[32px]',
   }
 
   return (
     <span
       className={`
-        inline-flex items-center gap-1
+        inline-flex items-center justify-center
         rounded-[var(--ds-radius-sm)]
-        font-medium
+        font-semibold
         ${sizeStyles[size]}
       `}
       style={{
-        backgroundColor: `${config.color}20`,
-        color: config.color
+        backgroundColor: config.color,
+        color: '#FFFFFF'
       }}
-      title={`优先级: ${config.label}`}
+      title={`优先级: ${config.fullLabel}`}
     >
-      <span>{config.icon}</span>
-      {showLabel && <span>{config.label}</span>}
+      {config.label}
     </span>
   )
 }

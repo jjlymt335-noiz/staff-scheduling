@@ -14,7 +14,7 @@ export function TopBar({ onToggleSidebar }: TopBarProps) {
         h-[var(--ds-topbar-height)]
         bg-[var(--ds-brand-bold)]
         shadow-[var(--ds-shadow-raised)]
-        flex items-center justify-between
+        flex items-center
         px-4
       "
     >
@@ -48,10 +48,10 @@ export function TopBar({ onToggleSidebar }: TopBarProps) {
         </button>
 
         {/* Logo & Title */}
-        <Link href="/" className="flex items-center gap-2 text-[var(--ds-text-inverse)] hover:no-underline">
+        <Link href="/projects" className="flex items-center gap-2 text-[var(--ds-text-inverse)] hover:no-underline">
           <svg
-            width="24"
-            height="24"
+            width="28"
+            height="28"
             viewBox="0 0 24 24"
             fill="currentColor"
           >
@@ -60,87 +60,6 @@ export function TopBar({ onToggleSidebar }: TopBarProps) {
           </svg>
           <span className="font-semibold text-[var(--ds-font-size-lg)]">任务管理</span>
         </Link>
-      </div>
-
-      {/* Center Section - Search */}
-      <div className="hidden md:flex flex-1 max-w-md mx-8">
-        <div className="relative w-full">
-          <input
-            type="text"
-            placeholder="搜索..."
-            className="
-              w-full h-8 pl-9 pr-4
-              bg-white/10
-              border border-transparent
-              rounded-[var(--ds-radius-sm)]
-              text-[var(--ds-text-inverse)] text-[var(--ds-font-size-sm)]
-              placeholder:text-white/60
-              focus:bg-white focus:text-[var(--ds-text-primary)]
-              focus:placeholder:text-[var(--ds-text-disabled)]
-              focus:outline-none
-              transition-all
-            "
-          />
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-        </div>
-      </div>
-
-      {/* Right Section */}
-      <div className="flex items-center gap-2">
-        {/* Add Button */}
-        <button
-          className="
-            p-2 rounded-[var(--ds-radius-sm)]
-            text-[var(--ds-text-inverse)]
-            hover:bg-white/10
-            transition-colors
-          "
-          aria-label="Create new"
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </button>
-
-        {/* User Avatar */}
-        <button
-          className="
-            w-8 h-8
-            rounded-full
-            bg-[var(--ds-status-info)]
-            text-[var(--ds-text-inverse)]
-            text-[var(--ds-font-size-sm)] font-medium
-            flex items-center justify-center
-            hover:ring-2 hover:ring-white/30
-            transition-all
-          "
-          aria-label="User menu"
-        >
-          U
-        </button>
       </div>
     </header>
   )

@@ -506,146 +506,208 @@ export default function ProjectsPage() {
       {/* 页面头部 */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-[var(--ds-font-size-xxl)] font-bold text-[var(--ds-text-primary)]">项目视图</h1>
+        <div className="flex gap-2">
+          <Link href="/project/new">
+            <Button variant="primary" size="sm">+ 添加项目</Button>
+          </Link>
+          <Link href="/requirement/new">
+            <Button variant="secondary" size="sm">+ 添加需求</Button>
+          </Link>
+          <Link href="/manage">
+            <Button variant="secondary" size="sm">+ 添加任务</Button>
+          </Link>
+        </div>
       </div>
 
       {/* 筛选/折叠按钮 */}
-      <div className="flex gap-2 mb-4">
-        <Button
-          variant={collapsedSections.projects ? 'secondary' : 'ghost'}
-          size="sm"
+      <div className="flex gap-1 mb-4 p-1 bg-[var(--ds-bg-hover)] rounded-[var(--ds-radius-md)] w-fit">
+        <button
+          className={`px-3 py-1.5 text-[var(--ds-font-size-sm)] rounded-[var(--ds-radius-sm)] transition-colors ${
+            !collapsedSections.projects
+              ? 'bg-[var(--ds-bg-card)] text-[var(--ds-text-primary)] shadow-sm'
+              : 'text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)]'
+          }`}
           onClick={() => setCollapsedSections(s => ({ ...s, projects: !s.projects }))}
         >
-          {collapsedSections.projects ? '展开项目' : '收起项目'}
-        </Button>
-        <Button
-          variant={collapsedSections.requirements ? 'secondary' : 'ghost'}
-          size="sm"
+          项目
+        </button>
+        <button
+          className={`px-3 py-1.5 text-[var(--ds-font-size-sm)] rounded-[var(--ds-radius-sm)] transition-colors ${
+            !collapsedSections.requirements
+              ? 'bg-[var(--ds-bg-card)] text-[var(--ds-text-primary)] shadow-sm'
+              : 'text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)]'
+          }`}
           onClick={() => setCollapsedSections(s => ({ ...s, requirements: !s.requirements }))}
         >
-          {collapsedSections.requirements ? '展开需求' : '收起需求'}
-        </Button>
-        <Button
-          variant={collapsedSections.tasks ? 'secondary' : 'ghost'}
-          size="sm"
+          独立需求
+        </button>
+        <button
+          className={`px-3 py-1.5 text-[var(--ds-font-size-sm)] rounded-[var(--ds-radius-sm)] transition-colors ${
+            !collapsedSections.tasks
+              ? 'bg-[var(--ds-bg-card)] text-[var(--ds-text-primary)] shadow-sm'
+              : 'text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)]'
+          }`}
           onClick={() => setCollapsedSections(s => ({ ...s, tasks: !s.tasks }))}
         >
-          {collapsedSections.tasks ? '展开任务' : '收起任务'}
-        </Button>
-      </div>
-
-      {/* 操作按钮 */}
-      <div className="flex gap-3 mb-6">
-        <Link href="/project/new">
-          <Button variant="primary" size="sm">+ 添加项目</Button>
-        </Link>
-        <Link href="/requirement/new">
-          <Button variant="secondary" size="sm">+ 添加需求</Button>
-        </Link>
-        <Link href="/manage">
-          <Button variant="secondary" size="sm">+ 添加任务</Button>
-        </Link>
+          独立任务
+        </button>
       </div>
 
       {/* 项目列表 */}
-      <div className="space-y-4">
+      <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] shadow-[var(--ds-shadow-card)] overflow-hidden">
+        {/* 表头 */}
+        {!collapsedSections.projects && sortedProjects.length > 0 && (
+          <div className="grid grid-cols-12 gap-4 px-4 py-2.5 bg-[var(--ds-bg-hover)] border-b border-[var(--ds-border-default)] text-[var(--ds-font-size-xs)] font-semibold text-[var(--ds-text-secondary)] uppercase tracking-wide">
+            <div className="col-span-5">项目名称</div>
+            <div className="col-span-1 text-center">优先级</div>
+            <div className="col-span-2">当前需求</div>
+            <div className="col-span-2">计划时间</div>
+            <div className="col-span-2 text-right">操作</div>
+          </div>
+        )}
+
         {!collapsedSections.projects && sortedProjects.map(project => {
           const currentReq = getCurrentRequirement(project)
           const nextReq = getNextRequirement(project)
           const isExpanded = expandedProjects.has(project.id)
 
           return (
-            <div key={project.id} className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] shadow-[var(--ds-shadow-card)] overflow-hidden">
-              {/* 项目头部 */}
+            <div key={project.id} className="border-b border-[var(--ds-border-default)] last:border-b-0">
+              {/* 项目行 */}
               <div
-                className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[var(--ds-bg-hover)] border-b border-[var(--ds-border-default)]"
+                className="grid grid-cols-12 gap-4 px-4 py-3 cursor-pointer hover:bg-[var(--ds-bg-hover)] transition-colors items-center"
                 onClick={() => toggleProjectExpand(project.id)}
               >
-                {/* 展开图标 */}
-                <button className="w-6 h-6 flex items-center justify-center text-[var(--ds-text-secondary)]">
-                  <svg
-                    width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                    className={`transform transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                  >
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </button>
+                {/* 项目名称区域 */}
+                <div className="col-span-5 flex items-center gap-3">
+                  {/* 展开图标 */}
+                  <button className="w-5 h-5 flex items-center justify-center text-[var(--ds-text-secondary)] flex-shrink-0">
+                    <svg
+                      width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                      className={`transform transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                    >
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </button>
 
-                {/* 项目图标 */}
-                <div className="w-6 h-6 rounded bg-[var(--ds-brand-primary)] flex items-center justify-center">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                  </svg>
+                  {/* 项目图标 */}
+                  <div className="w-6 h-6 rounded bg-[var(--ds-brand-primary)] flex items-center justify-center flex-shrink-0">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                    </svg>
+                  </div>
+
+                  {/* 编号 */}
+                  {project.code && <CodeBadge code={project.code} type="project" size="sm" />}
+
+                  {/* 标题 */}
+                  <Link
+                    href={`/project/${project.id}`}
+                    className="font-medium text-[var(--ds-text-primary)] hover:text-[var(--ds-brand-primary)] truncate"
+                    onClick={(e) => e.stopPropagation()}
+                    title={project.title}
+                  >
+                    {project.title}
+                  </Link>
                 </div>
 
-                {/* 编号 */}
-                {project.code && <CodeBadge code={project.code} type="project" />}
-
-                {/* 标题 */}
-                <Link
-                  href={`/project/${project.id}`}
-                  className="flex-1 font-medium text-[var(--ds-text-primary)] hover:text-[var(--ds-brand-primary)]"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {project.title}
-                </Link>
-
                 {/* 优先级 */}
-                <PriorityBadge priority={project.priority} />
+                <div className="col-span-1 flex justify-center">
+                  <PriorityBadge priority={project.priority} size="sm" />
+                </div>
+
+                {/* 当前需求 */}
+                <div className="col-span-2">
+                  {currentReq ? (
+                    <Link
+                      href={`/requirement/${currentReq.id}`}
+                      className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-link)] hover:underline truncate block"
+                      onClick={(e) => e.stopPropagation()}
+                      title={currentReq.title}
+                    >
+                      {currentReq.title}
+                    </Link>
+                  ) : (
+                    <span className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-disabled)]">无进行中</span>
+                  )}
+                </div>
 
                 {/* 日期 */}
-                <span className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)] w-32 text-right">
-                  {formatDate(project.startDate)} - {formatDate(project.endDate)}
-                </span>
+                <div className="col-span-2 text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)]">
+                  {formatDate(project.startDate)} ~ {formatDate(project.endDate)}
+                </div>
 
                 {/* 操作按钮 */}
-                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                  <Button variant="ghost" size="sm" onClick={() => setEditingProject(project)}>编辑</Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDeleteProject(project.id)}>删除</Button>
+                <div className="col-span-2 flex gap-1 justify-end" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => setEditingProject(project)}
+                    className="p-1.5 text-[var(--ds-text-secondary)] hover:text-[var(--ds-brand-primary)] hover:bg-[var(--ds-bg-selected)] rounded transition-colors"
+                    title="编辑"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteProject(project.id)}
+                    className="p-1.5 text-[var(--ds-text-secondary)] hover:text-[var(--ds-status-error)] hover:bg-[var(--ds-status-error-bg)] rounded transition-colors"
+                    title="删除"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                  </button>
                 </div>
               </div>
 
               {/* 展开内容 */}
               {isExpanded && editingProject?.id !== project.id && (
-                <div className="p-4">
+                <div className="px-4 py-4 bg-[var(--ds-bg-page)] border-t border-[var(--ds-border-default)]">
                   {project.description && (
-                    <p className="text-[var(--ds-text-secondary)] mb-4">{project.description}</p>
+                    <p className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)] mb-4 pl-8">{project.description}</p>
                   )}
 
                   {/* 当前/下一个需求 */}
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="p-3 rounded-[var(--ds-radius-md)] bg-[var(--ds-status-info-bg)] border border-[var(--ds-brand-primary)]/20">
-                      <div className="text-[var(--ds-font-size-sm)] font-medium text-[var(--ds-text-secondary)] mb-2">当前进行</div>
+                  <div className="grid grid-cols-2 gap-4 mb-4 pl-8">
+                    <div className="p-3 rounded-[var(--ds-radius-md)] bg-[var(--ds-bg-card)] border-l-4 border-[var(--ds-brand-primary)]">
+                      <div className="text-[var(--ds-font-size-xs)] font-semibold text-[var(--ds-text-secondary)] uppercase tracking-wide mb-2">当前进行</div>
                       {currentReq ? (
                         <div>
-                          <Link href={`/requirement/${currentReq.id}`} className="font-medium text-[var(--ds-text-link)] hover:underline">
+                          <div className="flex items-center gap-2">
                             {currentReq.code && <CodeBadge code={currentReq.code} type="requirement" size="sm" />}
-                            <span className="ml-2">{currentReq.title}</span>
-                          </Link>
-                          <div className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)] mt-1">
-                            {formatDate(currentReq.startDate)} - {formatDate(currentReq.endDate)}
+                            <Link href={`/requirement/${currentReq.id}`} className="font-medium text-[var(--ds-text-primary)] hover:text-[var(--ds-brand-primary)]">
+                              {currentReq.title}
+                            </Link>
                           </div>
-                          <button onClick={() => showRequirementDetail(currentReq)} className="text-[var(--ds-font-size-xs)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-link)] mt-1">查看人员</button>
+                          <div className="text-[var(--ds-font-size-xs)] text-[var(--ds-text-secondary)] mt-1">
+                            {formatDate(currentReq.startDate)} ~ {formatDate(currentReq.endDate)}
+                          </div>
+                          <button onClick={() => showRequirementDetail(currentReq)} className="text-[var(--ds-font-size-xs)] text-[var(--ds-text-link)] hover:underline mt-2">查看相关人员 →</button>
                         </div>
                       ) : (
-                        <span className="text-[var(--ds-text-disabled)]">无</span>
+                        <span className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-disabled)]">暂无进行中的需求</span>
                       )}
                     </div>
 
-                    <div className="p-3 rounded-[var(--ds-radius-md)] bg-[var(--ds-bg-hover)]">
-                      <div className="text-[var(--ds-font-size-sm)] font-medium text-[var(--ds-text-secondary)] mb-2">接下来</div>
+                    <div className="p-3 rounded-[var(--ds-radius-md)] bg-[var(--ds-bg-card)] border-l-4 border-[var(--ds-border-default)]">
+                      <div className="text-[var(--ds-font-size-xs)] font-semibold text-[var(--ds-text-secondary)] uppercase tracking-wide mb-2">接下来</div>
                       {nextReq ? (
                         <div>
-                          <Link href={`/requirement/${nextReq.id}`} className="font-medium text-[var(--ds-text-link)] hover:underline">
+                          <div className="flex items-center gap-2">
                             {nextReq.code && <CodeBadge code={nextReq.code} type="requirement" size="sm" />}
-                            <span className="ml-2">{nextReq.title}</span>
-                          </Link>
-                          <div className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)] mt-1">
-                            {formatDate(nextReq.startDate)} - {formatDate(nextReq.endDate)}
+                            <Link href={`/requirement/${nextReq.id}`} className="font-medium text-[var(--ds-text-primary)] hover:text-[var(--ds-brand-primary)]">
+                              {nextReq.title}
+                            </Link>
                           </div>
-                          <button onClick={() => showRequirementDetail(nextReq)} className="text-[var(--ds-font-size-xs)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-link)] mt-1">查看人员</button>
+                          <div className="text-[var(--ds-font-size-xs)] text-[var(--ds-text-secondary)] mt-1">
+                            {formatDate(nextReq.startDate)} ~ {formatDate(nextReq.endDate)}
+                          </div>
+                          <button onClick={() => showRequirementDetail(nextReq)} className="text-[var(--ds-font-size-xs)] text-[var(--ds-text-link)] hover:underline mt-2">查看相关人员 →</button>
                         </div>
                       ) : (
-                        <span className="text-[var(--ds-text-disabled)]">无</span>
+                        <span className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-disabled)]">暂无待处理需求</span>
                       )}
                     </div>
                   </div>
@@ -793,69 +855,88 @@ export default function ProjectsPage() {
           )
         })}
 
-        {projects.length === 0 && standaloneRequirements.length === 0 && standaloneTasks.length === 0 && (
+        {/* 空状态 */}
+        {!collapsedSections.projects && sortedProjects.length === 0 && (
           <div className="text-center py-12 text-[var(--ds-text-disabled)]">
-            暂无项目数据
-          </div>
-        )}
-
-        {/* 独立需求 */}
-        {!collapsedSections.requirements && standaloneRequirements.length > 0 && (
-          <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] shadow-[var(--ds-shadow-card)] p-4 mt-6">
-            <h2 className="text-[var(--ds-font-size-xl)] font-bold text-[var(--ds-text-primary)] mb-4">独立需求</h2>
-            <div className="space-y-2">
-              {standaloneRequirements.map(req => (
-                <div
-                  key={req.id}
-                  className="flex items-center gap-3 p-3 bg-[var(--ds-status-success-bg)] rounded-[var(--ds-radius-md)] border border-[var(--ds-status-success)]/20"
-                >
-                  <div className="w-5 h-5 rounded bg-[var(--ds-status-success)] flex items-center justify-center">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10" />
-                    </svg>
-                  </div>
-                  {req.code && <CodeBadge code={req.code} type="requirement" />}
-                  <Link href={`/requirement/${req.id}`} className="flex-1 font-medium text-[var(--ds-text-link)] hover:underline">{req.title}</Link>
-                  <PriorityBadge priority={req.priority} />
-                  <span className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)]">
-                    {formatDate(req.startDate)} - {formatDate(req.endDate)}
-                  </span>
-                  <Button variant="ghost" size="sm" onClick={() => handleDeleteRequirement(req.id)}>删除</Button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 独立任务 */}
-        {!collapsedSections.tasks && standaloneTasks.length > 0 && (
-          <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] shadow-[var(--ds-shadow-card)] p-4 mt-6">
-            <h2 className="text-[var(--ds-font-size-xl)] font-bold text-[var(--ds-text-primary)] mb-4">独立任务（进行中）</h2>
-            <div className="space-y-2">
-              {standaloneTasks.map(task => (
-                <div
-                  key={task.id}
-                  className="flex items-center gap-3 p-3 bg-[var(--ds-status-warning-bg)] rounded-[var(--ds-radius-md)] border border-[var(--ds-status-warning)]/20"
-                >
-                  <div className="w-5 h-5 rounded bg-[var(--ds-status-info)] flex items-center justify-center">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                  {task.code && <CodeBadge code={task.code} type="task" />}
-                  <Link href={`/task/${task.id}`} className="flex-1 font-medium text-[var(--ds-text-link)] hover:underline">{task.title}</Link>
-                  <PriorityBadge priority={task.priority} />
-                  <span className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)]">
-                    {formatDate(task.planStartDate)} - {formatDate(task.planEndDate)}
-                  </span>
-                  <AssigneeAvatar users={[{ id: task.user.id, name: task.user.name }]} size="sm" />
-                  <Button variant="ghost" size="sm" onClick={() => handleDeleteTask(task.id)}>删除</Button>
-                </div>
-              ))}
-            </div>
+            暂无项目，点击上方"+ 添加项目"创建
           </div>
         )}
       </div>
+
+      {/* 独立需求 */}
+      {!collapsedSections.requirements && standaloneRequirements.length > 0 && (
+        <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] shadow-[var(--ds-shadow-card)] overflow-hidden mt-6">
+          <div className="px-4 py-3 bg-[var(--ds-bg-hover)] border-b border-[var(--ds-border-default)]">
+            <h2 className="text-[var(--ds-font-size-md)] font-semibold text-[var(--ds-text-primary)]">独立需求</h2>
+          </div>
+          {standaloneRequirements.map(req => (
+            <div
+              key={req.id}
+              className="flex items-center gap-3 px-4 py-3 border-b border-[var(--ds-border-default)] last:border-b-0 hover:bg-[var(--ds-bg-hover)] transition-colors"
+            >
+              <div className="w-5 h-5 rounded bg-[var(--ds-status-success)] flex items-center justify-center flex-shrink-0">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                </svg>
+              </div>
+              {req.code && <CodeBadge code={req.code} type="requirement" size="sm" />}
+              <Link href={`/requirement/${req.id}`} className="flex-1 font-medium text-[var(--ds-text-primary)] hover:text-[var(--ds-brand-primary)] truncate">{req.title}</Link>
+              <PriorityBadge priority={req.priority} size="sm" />
+              <span className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)] w-40">
+                {formatDate(req.startDate)} ~ {formatDate(req.endDate)}
+              </span>
+              <button
+                onClick={() => handleDeleteRequirement(req.id)}
+                className="p-1.5 text-[var(--ds-text-secondary)] hover:text-[var(--ds-status-error)] hover:bg-[var(--ds-status-error-bg)] rounded transition-colors"
+                title="删除"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 独立任务 */}
+      {!collapsedSections.tasks && standaloneTasks.length > 0 && (
+        <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] shadow-[var(--ds-shadow-card)] overflow-hidden mt-6">
+          <div className="px-4 py-3 bg-[var(--ds-bg-hover)] border-b border-[var(--ds-border-default)]">
+            <h2 className="text-[var(--ds-font-size-md)] font-semibold text-[var(--ds-text-primary)]">独立任务（进行中）</h2>
+          </div>
+          {standaloneTasks.map(task => (
+            <div
+              key={task.id}
+              className="flex items-center gap-3 px-4 py-3 border-b border-[var(--ds-border-default)] last:border-b-0 hover:bg-[var(--ds-bg-hover)] transition-colors"
+            >
+              <div className="w-5 h-5 rounded bg-[var(--ds-status-info)] flex items-center justify-center flex-shrink-0">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+              {task.code && <CodeBadge code={task.code} type="task" size="sm" />}
+              <Link href={`/task/${task.id}`} className="flex-1 font-medium text-[var(--ds-text-primary)] hover:text-[var(--ds-brand-primary)] truncate">{task.title}</Link>
+              <PriorityBadge priority={task.priority} size="sm" />
+              <span className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)] w-40">
+                {formatDate(task.planStartDate)} ~ {formatDate(task.planEndDate)}
+              </span>
+              <AssigneeAvatar users={[{ id: task.user.id, name: task.user.name }]} size="sm" />
+              <button
+                onClick={() => handleDeleteTask(task.id)}
+                className="p-1.5 text-[var(--ds-text-secondary)] hover:text-[var(--ds-status-error)] hover:bg-[var(--ds-status-error-bg)] rounded transition-colors"
+                title="删除"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

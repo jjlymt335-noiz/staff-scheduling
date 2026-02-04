@@ -198,14 +198,17 @@ export default function TeamPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-[var(--ds-font-size-xxl)] font-bold text-[var(--ds-text-primary)]">团队视图</h1>
         <div className="flex gap-2">
+          <Link href="/project/new">
+            <Button variant="primary" size="sm">+ 添加项目</Button>
+          </Link>
           <Link href="/requirement/new">
-            <Button variant="primary" size="sm">+ 添加需求</Button>
+            <Button variant="secondary" size="sm">+ 添加需求</Button>
           </Link>
           <Link href="/manage">
             <Button variant="secondary" size="sm">+ 添加任务</Button>
           </Link>
           <Link href="/setup">
-            <Button variant="secondary" size="sm">+ 添加成员</Button>
+            <Button variant="ghost" size="sm">+ 添加成员</Button>
           </Link>
         </div>
       </div>
@@ -213,7 +216,7 @@ export default function TeamPage() {
       {/* 团队表格 */}
       <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] shadow-[var(--ds-shadow-card)] overflow-hidden">
         {/* 表头 */}
-        <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-[var(--ds-bg-hover)] border-b border-[var(--ds-border-default)] text-[var(--ds-font-size-sm)] font-semibold text-[var(--ds-text-secondary)]">
+        <div className="grid grid-cols-12 gap-4 px-4 py-2.5 bg-[var(--ds-bg-hover)] border-b border-[var(--ds-border-default)] text-[var(--ds-font-size-xs)] font-semibold text-[var(--ds-text-secondary)] uppercase tracking-wide">
           <div className="col-span-2">成员</div>
           <div className="col-span-5">当前任务</div>
           <div className="col-span-5">下一个任务</div>
@@ -223,12 +226,13 @@ export default function TeamPage() {
         {Object.entries(groupedUsers).map(([role, roleUsers]) => (
           <div key={role}>
             {/* 职能标题 */}
-            <div className="px-4 py-2 bg-[var(--ds-bg-page)] border-b border-[var(--ds-border-default)]">
+            <div className="px-4 py-2 bg-[var(--ds-bg-page)] border-b border-[var(--ds-border-default)] flex items-center gap-2">
+              <div className="w-1.5 h-4 rounded-full bg-[var(--ds-brand-primary)]"></div>
               <span className="text-[var(--ds-font-size-sm)] font-semibold text-[var(--ds-text-primary)]">
                 {roleLabels[role]}
               </span>
-              <span className="ml-2 text-[var(--ds-font-size-xs)] text-[var(--ds-text-disabled)]">
-                ({roleUsers.length})
+              <span className="text-[var(--ds-font-size-xs)] text-[var(--ds-text-disabled)] bg-[var(--ds-bg-hover)] px-1.5 py-0.5 rounded">
+                {roleUsers.length}
               </span>
             </div>
 
@@ -238,14 +242,14 @@ export default function TeamPage() {
               return (
                 <div
                   key={user.id}
-                  className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-[var(--ds-border-default)] hover:bg-[var(--ds-bg-hover)] transition-colors"
+                  className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-[var(--ds-border-default)] hover:bg-[var(--ds-bg-hover)]/50 transition-colors"
                 >
                   {/* 成员名称 */}
-                  <div className="col-span-2 flex items-center gap-2">
+                  <div className="col-span-2 flex items-start gap-2 pt-1">
                     <AssigneeAvatar users={[{ id: user.id, name: user.name }]} size="sm" />
                     <Link
                       href={`/person/${user.id}`}
-                      className="text-[var(--ds-text-link)] hover:underline font-medium text-[var(--ds-font-size-sm)]"
+                      className="text-[var(--ds-text-primary)] hover:text-[var(--ds-brand-primary)] font-medium text-[var(--ds-font-size-sm)]"
                     >
                       {user.name}
                     </Link>
@@ -254,39 +258,57 @@ export default function TeamPage() {
                   {/* 当前任务 */}
                   <div className="col-span-5">
                     {currentTasks.length === 0 ? (
-                      <span className="text-[var(--ds-text-disabled)] text-[var(--ds-font-size-sm)]">无任务</span>
+                      <div className="text-[var(--ds-text-disabled)] text-[var(--ds-font-size-sm)] py-1">暂无进行中的任务</div>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         {currentTasks.map((task) => (
-                          <div
-                            key={task.id}
-                            className={`
-                              flex items-center gap-2 p-2 rounded-[var(--ds-radius-sm)]
-                              ${isOverdue(task) ? 'bg-[var(--ds-status-error-bg)]' : 'bg-[var(--ds-bg-page)]'}
-                            `}
-                          >
-                            {task.code && <CodeBadge code={task.code} type="task" size="sm" />}
-                            <Link
-                              href={`/task/${task.id}`}
+                          <div key={task.id}>
+                            <div
                               className={`
-                                flex-1 text-[var(--ds-font-size-sm)] hover:underline truncate
-                                ${isOverdue(task) ? 'text-[var(--ds-status-error)]' : 'text-[var(--ds-text-primary)]'}
+                                flex items-center gap-2 px-2.5 py-1.5 rounded-[var(--ds-radius-sm)] border-l-3
+                                ${isOverdue(task)
+                                  ? 'bg-[var(--ds-status-error-bg)] border-l-[var(--ds-status-error)]'
+                                  : 'bg-[var(--ds-bg-page)] border-l-[var(--ds-brand-primary)]'}
                               `}
-                              title={formatTaskText(task)}
                             >
-                              {formatTaskText(task)}
-                            </Link>
-                            <PriorityBadge priority={task.priority} size="sm" />
-                            <button
-                              onClick={() => handleDeleteTask(task.id)}
-                              className="p-1 text-[var(--ds-text-disabled)] hover:text-[var(--ds-status-error)] hover:bg-[var(--ds-status-error-bg)] rounded transition-colors"
-                              title="删除任务"
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                              </svg>
-                            </button>
+                              {task.code && <CodeBadge code={task.code} type="task" size="sm" />}
+                              <Link
+                                href={`/task/${task.id}`}
+                                className={`
+                                  flex-1 text-[var(--ds-font-size-sm)] hover:underline truncate
+                                  ${isOverdue(task) ? 'text-[var(--ds-status-error)] font-medium' : 'text-[var(--ds-text-primary)]'}
+                                `}
+                                title={formatTaskText(task)}
+                              >
+                                {formatTaskText(task)}
+                              </Link>
+                              <PriorityBadge priority={task.priority} size="sm" />
+                              <button
+                                onClick={() => handleDeleteTask(task.id)}
+                                className="p-1 text-[var(--ds-text-disabled)] hover:text-[var(--ds-status-error)] hover:bg-[var(--ds-status-error-bg)] rounded transition-colors opacity-0 group-hover:opacity-100"
+                                title="删除任务"
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                              </button>
+                            </div>
+                            {/* 前置依赖 */}
+                            {task.predecessors && task.predecessors.length > 0 && (
+                              <div className="ml-3 mt-0.5 text-[var(--ds-font-size-xs)] text-[var(--ds-text-secondary)] flex items-center gap-1">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <polyline points="15 18 9 12 15 6" />
+                                </svg>
+                                <span>前置:</span>
+                                <Link
+                                  href={`/task/${task.predecessors[0].predecessor.id}`}
+                                  className="text-[var(--ds-text-link)] hover:underline"
+                                >
+                                  {task.predecessors[0].predecessor.code}
+                                </Link>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -296,35 +318,49 @@ export default function TeamPage() {
                   {/* 下一个任务 */}
                   <div className="col-span-5">
                     {nextTasks.length === 0 ? (
-                      <span className="text-[var(--ds-text-disabled)] text-[var(--ds-font-size-sm)]">无任务</span>
+                      <div className="text-[var(--ds-text-disabled)] text-[var(--ds-font-size-sm)] py-1">暂无待处理任务</div>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         {nextTasks.map((task) => (
-                          <div
-                            key={task.id}
-                            className="flex items-center gap-2 p-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-bg-page)]"
-                          >
-                            {task.code && <CodeBadge code={task.code} type="task" size="sm" />}
-                            <Link
-                              href={`/task/${task.id}`}
-                              className="flex-1 text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)] hover:underline truncate"
-                              title={formatTaskText(task)}
-                            >
-                              {formatTaskText(task)}
-                            </Link>
-                            <span className="text-[var(--ds-font-size-xs)] text-[var(--ds-text-disabled)] whitespace-nowrap">
-                              {formatDate(task.planStartDate)}
-                            </span>
-                            <button
-                              onClick={() => handleDeleteTask(task.id)}
-                              className="p-1 text-[var(--ds-text-disabled)] hover:text-[var(--ds-status-error)] hover:bg-[var(--ds-status-error-bg)] rounded transition-colors"
-                              title="删除任务"
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                              </svg>
-                            </button>
+                          <div key={task.id}>
+                            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-[var(--ds-radius-sm)] bg-[var(--ds-bg-page)] border-l-3 border-l-[var(--ds-border-default)]">
+                              {task.code && <CodeBadge code={task.code} type="task" size="sm" />}
+                              <Link
+                                href={`/task/${task.id}`}
+                                className="flex-1 text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)] hover:underline truncate"
+                                title={formatTaskText(task)}
+                              >
+                                {formatTaskText(task)}
+                              </Link>
+                              <span className="text-[var(--ds-font-size-xs)] text-[var(--ds-text-disabled)] whitespace-nowrap bg-[var(--ds-bg-hover)] px-1.5 py-0.5 rounded">
+                                {formatDate(task.planStartDate)}
+                              </span>
+                              <button
+                                onClick={() => handleDeleteTask(task.id)}
+                                className="p-1 text-[var(--ds-text-disabled)] hover:text-[var(--ds-status-error)] hover:bg-[var(--ds-status-error-bg)] rounded transition-colors opacity-0 group-hover:opacity-100"
+                                title="删除任务"
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                              </button>
+                            </div>
+                            {/* 前置依赖 */}
+                            {task.predecessors && task.predecessors.length > 0 && (
+                              <div className="ml-3 mt-0.5 text-[var(--ds-font-size-xs)] text-[var(--ds-text-secondary)] flex items-center gap-1">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <polyline points="15 18 9 12 15 6" />
+                                </svg>
+                                <span>前置:</span>
+                                <Link
+                                  href={`/task/${task.predecessors[0].predecessor.id}`}
+                                  className="text-[var(--ds-text-link)] hover:underline"
+                                >
+                                  {task.predecessors[0].predecessor.code}
+                                </Link>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>

@@ -100,7 +100,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   href={item.href}
                   onClick={onClose}
                   className={`
-                    flex items-center gap-3 px-3 py-2
+                    flex items-center gap-3 px-3 py-2.5
                     rounded-[var(--ds-radius-sm)]
                     text-[var(--ds-font-size-md)]
                     transition-colors
@@ -118,27 +118,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </Link>
               )
             })}
-          </div>
-
-          {/* Bottom Section */}
-          <div className="px-3 pt-4 border-t border-[var(--ds-border-default)]">
-            <Link
-              href="/requirement/new"
-              className="
-                flex items-center justify-center gap-2 px-3 py-2
-                bg-[var(--ds-brand-primary)] text-[var(--ds-text-inverse)]
-                rounded-[var(--ds-radius-sm)]
-                text-[var(--ds-font-size-md)] font-medium
-                hover:bg-[var(--ds-brand-primary-hover)] hover:no-underline
-                transition-colors
-              "
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              <span>创建需求</span>
-            </Link>
           </div>
         </nav>
       </aside>
