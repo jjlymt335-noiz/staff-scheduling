@@ -12,16 +12,14 @@ export async function POST() {
     }
 
     // 迁移项目编号
-    const projectsWithoutCode = await prisma.project.findMany({
-      where: { code: null },
+    const allProjects = await prisma.project.findMany({
       orderBy: { createdAt: 'asc' }
     })
+    const projectsWithoutCode = allProjects.filter(p => !p.code)
 
-    for (let i = 0; i < projectsWithoutCode.length; i++) {
-      const project = projectsWithoutCode[i]
-      // 找到当前最大的seqNumber
+    for (const project of projectsWithoutCode) {
       const maxSeq = await prisma.project.findFirst({
-        where: { seqNumber: { not: null } },
+        where: { seqNumber: { gt: 0 } },
         orderBy: { seqNumber: 'desc' },
         select: { seqNumber: true }
       })
@@ -38,15 +36,14 @@ export async function POST() {
     }
 
     // 迁移需求编号
-    const requirementsWithoutCode = await prisma.requirement.findMany({
-      where: { code: null },
+    const allRequirements = await prisma.requirement.findMany({
       orderBy: { createdAt: 'asc' }
     })
+    const requirementsWithoutCode = allRequirements.filter(r => !r.code)
 
-    for (let i = 0; i < requirementsWithoutCode.length; i++) {
-      const requirement = requirementsWithoutCode[i]
+    for (const requirement of requirementsWithoutCode) {
       const maxSeq = await prisma.requirement.findFirst({
-        where: { seqNumber: { not: null } },
+        where: { seqNumber: { gt: 0 } },
         orderBy: { seqNumber: 'desc' },
         select: { seqNumber: true }
       })
@@ -63,15 +60,14 @@ export async function POST() {
     }
 
     // 迁移任务编号
-    const tasksWithoutCode = await prisma.task.findMany({
-      where: { code: null },
+    const allTasks = await prisma.task.findMany({
       orderBy: { createdAt: 'asc' }
     })
+    const tasksWithoutCode = allTasks.filter(t => !t.code)
 
-    for (let i = 0; i < tasksWithoutCode.length; i++) {
-      const task = tasksWithoutCode[i]
+    for (const task of tasksWithoutCode) {
       const maxSeq = await prisma.task.findFirst({
-        where: { seqNumber: { not: null } },
+        where: { seqNumber: { gt: 0 } },
         orderBy: { seqNumber: 'desc' },
         select: { seqNumber: true }
       })
