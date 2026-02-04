@@ -10,6 +10,16 @@ interface User {
   role: string
 }
 
+interface PredecessorInfo {
+  predecessor: {
+    id: string
+    code: string
+    title: string
+    status: string
+    user?: { id: string; name: string }
+  }
+}
+
 interface Task {
   id: string
   code: string
@@ -31,6 +41,7 @@ interface Task {
     } | null
   } | null
   user: User
+  predecessors?: PredecessorInfo[]
 }
 
 export default function TeamPage() {
@@ -125,7 +136,7 @@ export default function TeamPage() {
       })
       .sort((a, b) => a.priority - b.priority)
 
-    // 获取未来任务
+    // 获取未来任务（先按开始时间排序，再按优先级排序）
     const futureTasks = tasks
       .filter((task) => {
         if (task.user.id !== userId) return false
@@ -134,8 +145,11 @@ export default function TeamPage() {
         return startDate > today
       })
       .sort((a, b) => {
-        if (a.priority !== b.priority) return a.priority - b.priority
-        return new Date(a.planStartDate).getTime() - new Date(b.planStartDate).getTime()
+        // 先按开始时间排序
+        const timeCompare = new Date(a.planStartDate).getTime() - new Date(b.planStartDate).getTime()
+        if (timeCompare !== 0) return timeCompare
+        // 时间相同再按优先级排序
+        return a.priority - b.priority
       })
 
     // 根据并发任务规则确定显示逻辑
@@ -272,20 +286,27 @@ export default function TeamPage() {
                       ) : (
                         <div className="space-y-1">
                           {currentTasks.map((task) => (
-                            <div key={task.id} className={`flex items-center justify-between ${isOverdue(task) ? 'text-red-600' : ''}`}>
-                              <Link
-                                href={`/task/${task.id}`}
-                                className="text-sm hover:underline"
-                              >
-                                {formatTaskText(task)}
-                              </Link>
-                              <button
-                                onClick={() => handleDeleteTask(task.id)}
-                                className="ml-2 px-1.5 py-0.5 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
-                                title="删除任务"
-                              >
-                                ×
-                              </button>
+                            <div key={task.id} className={`${isOverdue(task) ? 'text-red-600' : ''}`}>
+                              <div className="flex items-center justify-between">
+                                <Link
+                                  href={`/task/${task.id}`}
+                                  className="text-sm hover:underline"
+                                >
+                                  {formatTaskText(task)}
+                                </Link>
+                                <button
+                                  onClick={() => handleDeleteTask(task.id)}
+                                  className="ml-2 px-1.5 py-0.5 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
+                                  title="删除任务"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                              {task.predecessors && task.predecessors.length > 0 && (
+                                <div className="text-xs text-gray-500 ml-2">
+                                  前置: <Link href={`/task/${task.predecessors[0].predecessor.id}`} className="text-blue-500 hover:underline">[{task.predecessors[0].predecessor.code}] {task.predecessors[0].predecessor.title}</Link>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -298,25 +319,32 @@ export default function TeamPage() {
                       ) : (
                         <div className="space-y-1">
                           {nextTasks.map((task) => (
-                            <div key={task.id} className="flex items-center justify-between text-sm text-gray-600">
-                              <div>
-                                <Link
-                                  href={`/task/${task.id}`}
-                                  className="hover:underline"
+                            <div key={task.id} className="text-sm text-gray-600">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <Link
+                                    href={`/task/${task.id}`}
+                                    className="hover:underline"
+                                  >
+                                    {formatTaskText(task)}
+                                  </Link>
+                                  <span className="text-xs text-gray-500 ml-2">
+                                    ({formatDate(task.planStartDate)})
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => handleDeleteTask(task.id)}
+                                  className="ml-2 px-1.5 py-0.5 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
+                                  title="删除任务"
                                 >
-                                  {formatTaskText(task)}
-                                </Link>
-                                <span className="text-xs text-gray-500 ml-2">
-                                  ({formatDate(task.planStartDate)})
-                                </span>
+                                  ×
+                                </button>
                               </div>
-                              <button
-                                onClick={() => handleDeleteTask(task.id)}
-                                className="ml-2 px-1.5 py-0.5 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
-                                title="删除任务"
-                              >
-                                ×
-                              </button>
+                              {task.predecessors && task.predecessors.length > 0 && (
+                                <div className="text-xs text-gray-500 ml-2">
+                                  前置: <Link href={`/task/${task.predecessors[0].predecessor.id}`} className="text-blue-500 hover:underline">[{task.predecessors[0].predecessor.code}] {task.predecessors[0].predecessor.title}</Link>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>

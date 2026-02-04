@@ -10,8 +10,19 @@ interface User {
   role: string
 }
 
+interface PredecessorInfo {
+  predecessor: {
+    id: string
+    code: string
+    title: string
+    status: string
+    user?: { id: string; name: string }
+  }
+}
+
 interface Task {
   id: string
+  code?: string
   title: string
   type: string
   requirementId?: string | null
@@ -28,6 +39,7 @@ interface Task {
     title: string
   } | null
   user: User
+  predecessors?: PredecessorInfo[]
 }
 
 export default function CalendarPage() {
@@ -45,6 +57,7 @@ export default function CalendarPage() {
     links: Array<{ title: string; url: string }>
     requirement: { id: string; title: string } | null
     user: User
+    predecessor: { id: string; code: string; title: string } | null
   } | null>(null)
 
   const [selectedRequirement, setSelectedRequirement] = useState<{
@@ -180,6 +193,9 @@ export default function CalendarPage() {
     if (task.links) {
       try { parsedLinks = JSON.parse(task.links) } catch (e) { /* ignore */ }
     }
+    const pred = task.predecessors && task.predecessors.length > 0
+      ? { id: task.predecessors[0].predecessor.id, code: task.predecessors[0].predecessor.code, title: task.predecessors[0].predecessor.title }
+      : null
     setSelectedTask({
       id: task.id,
       title: task.title,
@@ -190,6 +206,7 @@ export default function CalendarPage() {
       links: parsedLinks,
       requirement: task.requirement,
       user: task.user,
+      predecessor: pred,
     })
   }
 
@@ -308,6 +325,9 @@ export default function CalendarPage() {
               <div><span className="text-gray-500">时间：</span>{formatDateBeijing(selectedTask.planStartDate)} - {formatDateBeijing(selectedTask.planEndDate)}</div>
               {selectedTask.requirement && (
                 <div><span className="text-gray-500">所属需求：</span><Link href={`/requirement/${selectedTask.requirement.id}`} className="text-blue-600 hover:underline">{selectedTask.requirement.title}</Link></div>
+              )}
+              {selectedTask.predecessor && (
+                <div><span className="text-gray-500">前置任务：</span><Link href={`/task/${selectedTask.predecessor.id}`} className="text-blue-600 hover:underline">[{selectedTask.predecessor.code}] {selectedTask.predecessor.title}</Link></div>
               )}
             </div>
 

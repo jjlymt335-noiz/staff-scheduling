@@ -57,10 +57,10 @@ function ManagePageContent() {
   const [newTaskLinkTitle, setNewTaskLinkTitle] = useState('')
   const [newTaskLinkUrl, setNewTaskLinkUrl] = useState('')
 
-  // 前置任务相关状态
+  // 前置任务相关状态（只能选择一个）
   const [predecessorSearch, setPredecessorSearch] = useState('')
   const [predecessorResults, setPredecessorResults] = useState<PredecessorTask[]>([])
-  const [selectedPredecessors, setSelectedPredecessors] = useState<PredecessorTask[]>([])
+  const [selectedPredecessor, setSelectedPredecessor] = useState<PredecessorTask | null>(null)
   const [searchingPredecessor, setSearchingPredecessor] = useState(false)
 
   useEffect(() => {
@@ -96,7 +96,7 @@ function ManagePageContent() {
       const data = await res.json()
       // 过滤掉已选择的任务
       const filtered = data.filter((t: PredecessorTask) =>
-        !selectedPredecessors.some(p => p.id === t.id)
+        selectedPredecessor?.id !== t.id
       )
       setPredecessorResults(filtered)
     } catch (error) {
@@ -106,18 +106,16 @@ function ManagePageContent() {
     }
   }
 
-  // 添加前置任务
-  const addPredecessor = (task: PredecessorTask) => {
-    if (!selectedPredecessors.some(p => p.id === task.id)) {
-      setSelectedPredecessors([...selectedPredecessors, task])
-    }
+  // 选择前置任务（只能选一个，替换之前的）
+  const selectPredecessor = (task: PredecessorTask) => {
+    setSelectedPredecessor(task)
     setPredecessorSearch('')
     setPredecessorResults([])
   }
 
   // 移除前置任务
-  const removePredecessor = (taskId: string) => {
-    setSelectedPredecessors(selectedPredecessors.filter(p => p.id !== taskId))
+  const removePredecessor = () => {
+    setSelectedPredecessor(null)
   }
 
   const handleAddTask = async (e: React.FormEvent) => {
@@ -129,7 +127,7 @@ function ManagePageContent() {
         durationWorkdays: parseInt(newTask.durationWorkdays.toString()),
         priority: parseInt(newTask.priority.toString()),
         links: taskLinks.length > 0 ? JSON.stringify(taskLinks) : null,
-        predecessorIds: selectedPredecessors.map(p => p.id),
+        predecessorIds: selectedPredecessor ? [selectedPredecessor.id] : [],
       }
 
       const response = await fetch('/api/tasks', {
@@ -151,7 +149,7 @@ function ManagePageContent() {
           endTimeSlot: 'AFTERNOON',
         })
         setTaskLinks([])
-        setSelectedPredecessors([])
+        setSelectedPredecessor(null)
         alert('任务添加成功！')
       } else {
         const error = await response.json()
@@ -320,68 +318,68 @@ function ManagePageContent() {
               />
             </div>
 
-            {/* 前置任务选择 */}
+            {/* 前置任务选择（只能选一个） */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                前置任务（可选）
+                前置任务（可选，只能选一个）
               </label>
               {/* 已选择的前置任务 */}
-              {selectedPredecessors.length > 0 && (
-                <div className="space-y-1 mb-2">
-                  {selectedPredecessors.map((task) => (
-                    <div key={task.id} className="flex items-center gap-2 p-2 bg-blue-50 rounded text-sm border border-blue-200">
-                      <span className="font-mono text-blue-600">{task.code}</span>
-                      <span className="flex-1 truncate">{task.title}</span>
-                      <span className={`px-1.5 py-0.5 rounded text-xs ${
-                        task.status === 'DONE' ? 'bg-green-100 text-green-700' :
-                        task.status === 'DOING' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {task.status === 'DONE' ? '已完成' : task.status === 'DOING' ? '进行中' : '待办'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => removePredecessor(task.id)}
-                        className="text-red-600 hover:text-red-800 text-xs"
-                      >
-                        移除
-                      </button>
-                    </div>
-                  ))}
+              {selectedPredecessor && (
+                <div className="mb-2">
+                  <div className="flex items-center gap-2 p-2 bg-blue-50 rounded text-sm border border-blue-200">
+                    <span className="font-mono text-blue-600">{selectedPredecessor.code}</span>
+                    <span className="flex-1 truncate">{selectedPredecessor.title}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-xs ${
+                      selectedPredecessor.status === 'DONE' ? 'bg-green-100 text-green-700' :
+                      selectedPredecessor.status === 'DOING' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      {selectedPredecessor.status === 'DONE' ? '已完成' : selectedPredecessor.status === 'DOING' ? '进行中' : '待办'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={removePredecessor}
+                      className="text-red-600 hover:text-red-800 text-xs"
+                    >
+                      移除
+                    </button>
+                  </div>
                 </div>
               )}
-              {/* 搜索框 */}
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="搜索任务（按名称或编号）..."
-                  value={predecessorSearch}
-                  onChange={(e) => {
-                    setPredecessorSearch(e.target.value)
-                    searchPredecessors(e.target.value)
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {searchingPredecessor && (
-                  <div className="absolute right-3 top-2.5 text-gray-400 text-sm">搜索中...</div>
-                )}
-                {/* 搜索结果下拉 */}
-                {predecessorResults.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                    {predecessorResults.map((task) => (
-                      <div
-                        key={task.id}
-                        onClick={() => addPredecessor(task)}
-                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
-                      >
-                        <span className="font-mono text-blue-600 text-sm">{task.code}</span>
-                        <span className="flex-1 truncate">{task.title}</span>
-                        {task.user && <span className="text-gray-500 text-xs">{task.user.name}</span>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* 搜索框（只有未选择时显示） */}
+              {!selectedPredecessor && (
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="搜索任务（按名称或编号）..."
+                    value={predecessorSearch}
+                    onChange={(e) => {
+                      setPredecessorSearch(e.target.value)
+                      searchPredecessors(e.target.value)
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {searchingPredecessor && (
+                    <div className="absolute right-3 top-2.5 text-gray-400 text-sm">搜索中...</div>
+                  )}
+                  {/* 搜索结果下拉 */}
+                  {predecessorResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {predecessorResults.map((task) => (
+                        <div
+                          key={task.id}
+                          onClick={() => selectPredecessor(task)}
+                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+                        >
+                          <span className="font-mono text-blue-600 text-sm">{task.code}</span>
+                          <span className="flex-1 truncate">{task.title}</span>
+                          {task.user && <span className="text-gray-500 text-xs">{task.user.name}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>
