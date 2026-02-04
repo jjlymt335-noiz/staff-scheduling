@@ -1,23 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
-import { getBeijingDateStr, getBeijingToday, isBeijingToday, formatDateBeijing } from '@/lib/timezone'
+import { getBeijingToday, formatDateBeijing } from '@/lib/timezone'
+import { PriorityBadge, CodeBadge } from '@/components/issue'
 
 interface User {
   id: string
   name: string
   role: string
-}
-
-interface PredecessorInfo {
-  predecessor: {
-    id: string
-    code: string
-    title: string
-    status: string
-    user?: { id: string; name: string }
-  }
 }
 
 interface Task {
@@ -28,61 +19,43 @@ interface Task {
   requirementId?: string | null
   priority: number
   planStartDate: string
-  startTimeSlot: string
   planEndDate: string
-  endTimeSlot: string
   forecastEndDate: string | null
   actualEndDate: string | null
-  links: string | null
   requirement: {
     id: string
+    code?: string
     title: string
   } | null
   user: User
-  predecessors?: PredecessorInfo[]
 }
 
+// 任务颜色配置
+const taskColors = [
+  { bg: '#4C9AFF', hover: '#2684FF' }, // 蓝色
+  { bg: '#36B37E', hover: '#00875A' }, // 绿色
+  { bg: '#FF8B00', hover: '#FF991F' }, // 橙色
+  { bg: '#6554C0', hover: '#5243AA' }, // 紫色
+  { bg: '#00B8D9', hover: '#00A3BF' }, // 青色
+  { bg: '#FF5630', hover: '#DE350B' }, // 红色
+]
+
 export default function CalendarPage() {
-  const [currentWeekStart, setCurrentWeekStart] = useState(getWeekStart(new Date()))
   const [tasks, setTasks] = useState<Task[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedTask, setSelectedTask] = useState<{
-    id: string
-    title: string
-    type: string
-    priority: number
-    planStartDate: string
-    planEndDate: string
-    links: Array<{ title: string; url: string }>
-    requirement: { id: string; title: string } | null
-    user: User
-    predecessor: { id: string; code: string; title: string } | null
-  } | null>(null)
+  const [viewStartDate, setViewStartDate] = useState(() => {
+    const today = getBeijingToday()
+    // 从本周一开始
+    const day = today.getDay()
+    const diff = day === 0 ? -6 : 1 - day
+    today.setDate(today.getDate() + diff)
+    return today
+  })
 
-  const [selectedRequirement, setSelectedRequirement] = useState<{
-    id: string
-    title: string
-    startDate: string | null
-    endDate: string | null
-    links: Array<{ title: string; url: string }>
-    personnel: Array<{
-      userId: string
-      userName: string
-      userRole: string
-      currentTask: string | null
-    }>
-  } | null>(null)
-
-  const roleOrder = ['MANAGEMENT', 'FRONTEND', 'BACKEND', 'PRODUCT', 'OPERATIONS', 'STRATEGY']
-  const roleLabels: Record<string, string> = {
-    MANAGEMENT: '管理',
-    FRONTEND: '前端',
-    BACKEND: '后端',
-    PRODUCT: '产品',
-    OPERATIONS: '运营',
-    STRATEGY: '战略'
-  }
+  // 显示6周的数据
+  const WEEKS_TO_SHOW = 6
+  const DAYS_TO_SHOW = WEEKS_TO_SHOW * 7
 
   useEffect(() => {
     fetchData()
@@ -105,462 +78,329 @@ export default function CalendarPage() {
     }
   }
 
-  const handleDeleteTask = async (taskId: string) => {
-    if (!confirm('确定要删除这个任务吗？')) {
-      return
+  // 生成日期数组
+  const dates = useMemo(() => {
+    const result: Date[] = []
+    for (let i = 0; i < DAYS_TO_SHOW; i++) {
+      const date = new Date(viewStartDate)
+      date.setDate(viewStartDate.getDate() + i)
+      result.push(date)
     }
+    return result
+  }, [viewStartDate, DAYS_TO_SHOW])
 
-    try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
-        method: 'DELETE'
-      })
-      if (response.ok) {
-        fetchData()
-        alert('任务删除成功！')
-      } else {
-        const error = await response.json()
-        alert('删除失败：' + error.error)
+  // 按周分组日期
+  const weeks = useMemo(() => {
+    const result: { weekStart: Date; days: Date[] }[] = []
+    for (let i = 0; i < WEEKS_TO_SHOW; i++) {
+      const weekStart = new Date(viewStartDate)
+      weekStart.setDate(viewStartDate.getDate() + i * 7)
+      const days: Date[] = []
+      for (let j = 0; j < 7; j++) {
+        const day = new Date(weekStart)
+        day.setDate(weekStart.getDate() + j)
+        days.push(day)
       }
-    } catch (error) {
-      console.error('Failed to delete task:', error)
-      alert('删除失败，请重试')
+      result.push({ weekStart, days })
     }
-  }
+    return result
+  }, [viewStartDate, WEEKS_TO_SHOW])
 
-  // 获取一周的开始日期（周一）
-  function getWeekStart(date: Date): Date {
-    const d = new Date(date)
-    const day = d.getDay()
-    const diff = day === 0 ? -6 : 1 - day // 调整到周一
-    d.setDate(d.getDate() + diff)
-    d.setHours(0, 0, 0, 0)
-    return d
-  }
-
-  // 获取一周的7天日期数组
-  const getWeekDays = (weekStart: Date): Date[] => {
-    const days: Date[] = []
-    for (let i = 0; i < 7; i++) {
-      const day = new Date(weekStart)
-      day.setDate(weekStart.getDate() + i)
-      days.push(day)
-    }
-    return days
-  }
-
-  // 按职能顺序排序用户
-  const getUsersByRole = (users: User[]): User[] => {
-    return [...users].sort((a, b) => {
-      const roleIndexA = roleOrder.indexOf(a.role)
-      const roleIndexB = roleOrder.indexOf(b.role)
-      if (roleIndexA !== roleIndexB) return roleIndexA - roleIndexB
-      return a.name.localeCompare(b.name, 'zh-CN')
-    })
-  }
-
-  // 格式化为本地日期字符串 YYYY-MM-DD（避免时区偏移）
-  const toLocalDateStr = (d: Date) => {
+  // 获取日期字符串
+  const toDateStr = (d: Date) => {
     const y = d.getFullYear()
     const m = String(d.getMonth() + 1).padStart(2, '0')
     const day = String(d.getDate()).padStart(2, '0')
     return `${y}-${m}-${day}`
   }
 
-  // 获取用户在某日的最高优先级任务
-  const getHighestPriorityTaskForDate = (userId: string, date: Date): Task | null => {
-    const dateStr = toLocalDateStr(date)
-    const tasksForDate = tasks.filter(task => {
-      if (task.user.id !== userId) return false
-      const startDate = toLocalDateStr(new Date(task.planStartDate))
-      const endDate = toLocalDateStr(new Date(task.planEndDate))
-      return dateStr >= startDate && dateStr <= endDate
-    })
-    tasksForDate.sort((a, b) => a.priority - b.priority)
-    return tasksForDate.length > 0 ? tasksForDate[0] : null
-  }
+  // 计算任务在时间线上的位置和宽度
+  const getTaskPosition = (task: Task) => {
+    const startStr = toDateStr(viewStartDate)
+    const endStr = toDateStr(dates[dates.length - 1])
+    const taskStartStr = task.planStartDate.split('T')[0]
+    const taskEndStr = task.planEndDate.split('T')[0]
 
-  const isToday = (date: Date) => isBeijingToday(date)
-
-  const formatTaskTitle = (task: Task) => {
-    const codePrefix = task.code ? `[${task.code}] ` : ''
-    if (task.type === 'IN_REQUIREMENT' && task.requirement) {
-      return `${codePrefix}${task.requirement.title}-${task.title}`
+    // 任务不在视图范围内
+    if (taskEndStr < startStr || taskStartStr > endStr) {
+      return null
     }
-    return `${codePrefix}${task.title}`
+
+    const viewStartTime = viewStartDate.getTime()
+    const dayMs = 24 * 60 * 60 * 1000
+
+    // 计算起始位置
+    const taskStart = new Date(task.planStartDate)
+    taskStart.setHours(0, 0, 0, 0)
+    let startOffset = Math.floor((taskStart.getTime() - viewStartTime) / dayMs)
+    startOffset = Math.max(0, startOffset)
+
+    // 计算结束位置
+    const taskEnd = new Date(task.planEndDate)
+    taskEnd.setHours(0, 0, 0, 0)
+    let endOffset = Math.floor((taskEnd.getTime() - viewStartTime) / dayMs)
+    endOffset = Math.min(DAYS_TO_SHOW - 1, endOffset)
+
+    // 计算宽度（天数）
+    const width = endOffset - startOffset + 1
+
+    if (width <= 0) return null
+
+    return { startOffset, width }
   }
 
-  const openTaskModal = (task: Task) => {
-    let parsedLinks: Array<{ title: string; url: string }> = []
-    if (task.links) {
-      try { parsedLinks = JSON.parse(task.links) } catch (e) { /* ignore */ }
+  // 判断是否是今天
+  const isToday = (date: Date) => {
+    const today = getBeijingToday()
+    return date.getFullYear() === today.getFullYear() &&
+           date.getMonth() === today.getMonth() &&
+           date.getDate() === today.getDate()
+  }
+
+  // 计算今天的位置
+  const todayOffset = useMemo(() => {
+    const today = getBeijingToday()
+    const viewStartTime = viewStartDate.getTime()
+    const dayMs = 24 * 60 * 60 * 1000
+    const offset = Math.floor((today.getTime() - viewStartTime) / dayMs)
+    if (offset >= 0 && offset < DAYS_TO_SHOW) {
+      return offset
     }
-    const pred = task.predecessors && task.predecessors.length > 0
-      ? { id: task.predecessors[0].predecessor.id, code: task.predecessors[0].predecessor.code, title: task.predecessors[0].predecessor.title }
-      : null
-    setSelectedTask({
-      id: task.id,
-      title: task.title,
-      type: task.type,
-      priority: task.priority,
-      planStartDate: task.planStartDate,
-      planEndDate: task.planEndDate,
-      links: parsedLinks,
-      requirement: task.requirement,
-      user: task.user,
-      predecessor: pred,
-    })
+    return -1
+  }, [viewStartDate, DAYS_TO_SHOW])
+
+  // 获取任务颜色
+  const getTaskColor = (index: number) => {
+    return taskColors[index % taskColors.length]
   }
 
-  // 获取需求的所有相关人员
-  const showRequirementDetail = async (requirementId: string, requirementTitle: string) => {
-    try {
-      // 获取需求信息
-      const reqRes = await fetch('/api/requirements')
-      const allRequirements = await reqRes.json()
-      const requirement = allRequirements.find((r: any) => r.id === requirementId)
-
-      // 过滤该需求的任务
-      const requirementTasks = tasks.filter(t => t.requirementId === requirementId)
-
-      // 按用户分组
-      const userMap = new Map()
-      requirementTasks.forEach((task) => {
-        if (!userMap.has(task.user.id)) {
-          userMap.set(task.user.id, {
-            userId: task.user.id,
-            userName: task.user.name,
-            userRole: task.user.role,
-            currentTask: null,
-            currentTaskPriority: Infinity
-          })
-        }
-
-        // 找到该用户当前正在做的任务
-        const today = getBeijingToday()
-        const taskStart = new Date(task.planStartDate)
-        taskStart.setHours(0, 0, 0, 0)
-
-        let taskEnd: Date
-        if (task.actualEndDate) {
-          taskEnd = new Date(task.actualEndDate)
-        } else if (task.forecastEndDate) {
-          taskEnd = new Date(task.forecastEndDate)
-        } else {
-          taskEnd = new Date(task.planEndDate)
-        }
-        taskEnd.setHours(0, 0, 0, 0)
-
-        if (today >= taskStart && today <= taskEnd) {
-          const user = userMap.get(task.user.id)
-          if (task.priority < user.currentTaskPriority) {
-            user.currentTask = task.title
-            user.currentTaskPriority = task.priority
-          }
-        }
+  // 过滤出在视图范围内的任务
+  const visibleTasks = useMemo(() => {
+    return tasks.filter(task => getTaskPosition(task) !== null)
+      .sort((a, b) => {
+        // 先按开始日期排序
+        const startCompare = a.planStartDate.localeCompare(b.planStartDate)
+        if (startCompare !== 0) return startCompare
+        // 再按优先级排序
+        return a.priority - b.priority
       })
+  }, [tasks, viewStartDate])
 
-      let parsedLinks: Array<{ title: string; url: string }> = []
-      if (requirement?.links) {
-        try { parsedLinks = JSON.parse(requirement.links) } catch (e) { /* ignore */ }
-      }
-
-      setSelectedRequirement({
-        id: requirementId,
-        title: requirementTitle,
-        startDate: requirement?.startDate || null,
-        endDate: requirement?.endDate || null,
-        links: parsedLinks,
-        personnel: Array.from(userMap.values()).map(u => ({
-          userId: u.userId,
-          userName: u.userName,
-          userRole: u.userRole,
-          currentTask: u.currentTask
-        }))
-      })
-    } catch (error) {
-      console.error('Failed to fetch requirement details:', error)
-    }
+  // 切换视图
+  const changeView = (weeks: number) => {
+    const newDate = new Date(viewStartDate)
+    newDate.setDate(newDate.getDate() + weeks * 7)
+    setViewStartDate(newDate)
   }
 
-  // 切换周
-  const changeWeek = (offset: number) => {
-    const newDate = new Date(currentWeekStart)
-    newDate.setDate(newDate.getDate() + (offset * 7))
-    setCurrentWeekStart(newDate)
+  // 回到今天
+  const goToToday = () => {
+    const today = getBeijingToday()
+    const day = today.getDay()
+    const diff = day === 0 ? -6 : 1 - day
+    today.setDate(today.getDate() + diff)
+    setViewStartDate(today)
   }
 
-  const weekDays = getWeekDays(currentWeekStart)
-  const sortedUsers = getUsersByRole(users)
-
-  // 获取周日期范围显示
-  const weekEndDate = new Date(currentWeekStart)
-  weekEndDate.setDate(weekEndDate.getDate() + 6)
-  const weekLabel = `${currentWeekStart.getMonth() + 1}月${currentWeekStart.getDate()}日 - ${weekEndDate.getMonth() + 1}月${weekEndDate.getDate()}日`
+  // 单元格宽度
+  const CELL_WIDTH = 40 // px
+  const NAME_COL_WIDTH = 280 // px
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">加载中...</div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-[var(--ds-text-secondary)]">加载中...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      {selectedTask && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-             onClick={() => setSelectedTask(null)}>
-          <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto"
-               onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">
-                <Link href={`/task/${selectedTask.id}`} className="text-blue-600 hover:underline">{selectedTask.title}</Link>
-              </h2>
-              <button onClick={() => setSelectedTask(null)}
-                      className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
-            </div>
-
-            <div className="space-y-3 text-sm">
-              <div><span className="text-gray-500">负责人：</span><Link href={`/person/${selectedTask.user.id}`} className="text-blue-600 hover:underline">{selectedTask.user.name}</Link></div>
-              <div><span className="text-gray-500">优先级：</span>{selectedTask.priority}</div>
-              <div><span className="text-gray-500">时间：</span>{formatDateBeijing(selectedTask.planStartDate)} - {formatDateBeijing(selectedTask.planEndDate)}</div>
-              {selectedTask.requirement && (
-                <div><span className="text-gray-500">所属需求：</span><Link href={`/requirement/${selectedTask.requirement.id}`} className="text-blue-600 hover:underline">{selectedTask.requirement.title}</Link></div>
-              )}
-              {selectedTask.predecessor && (
-                <div><span className="text-gray-500">前置任务：</span><Link href={`/task/${selectedTask.predecessor.id}`} className="text-blue-600 hover:underline">[{selectedTask.predecessor.code}] {selectedTask.predecessor.title}</Link></div>
-              )}
-            </div>
-
-            {selectedTask.links.length > 0 && (
-              <div className="mt-4">
-                <h3 className="text-lg font-semibold mb-2">相关链接</h3>
-                <div className="space-y-1">
-                  {selectedTask.links.map((link, index) => (
-                    <div key={index}>
-                      <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">{link.title}</a>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+    <div>
+      {/* 页面头部 */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-[var(--ds-font-size-xxl)] font-bold text-[var(--ds-text-primary)]">日历视图</h1>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => changeView(-WEEKS_TO_SHOW)}
+            className="px-3 py-1.5 text-[var(--ds-font-size-sm)] border border-[var(--ds-border-default)] rounded-[var(--ds-radius-md)] hover:bg-[var(--ds-bg-hover)] transition-colors"
+          >
+            ← 前{WEEKS_TO_SHOW}周
+          </button>
+          <button
+            onClick={goToToday}
+            className="px-3 py-1.5 text-[var(--ds-font-size-sm)] bg-[var(--ds-brand-primary)] text-white rounded-[var(--ds-radius-md)] hover:bg-[var(--ds-brand-primary-hover)] transition-colors"
+          >
+            今天
+          </button>
+          <button
+            onClick={() => changeView(WEEKS_TO_SHOW)}
+            className="px-3 py-1.5 text-[var(--ds-font-size-sm)] border border-[var(--ds-border-default)] rounded-[var(--ds-radius-md)] hover:bg-[var(--ds-bg-hover)] transition-colors"
+          >
+            后{WEEKS_TO_SHOW}周 →
+          </button>
         </div>
-      )}
+      </div>
 
-      {selectedRequirement && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-             onClick={() => setSelectedRequirement(null)}>
-          <div className="bg-white rounded-lg p-6 max-w-3xl w-full mx-4 max-h-[80vh] overflow-y-auto"
-               onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <h2 className="text-2xl font-bold">需求：<Link href={`/requirement/${selectedRequirement.id}`} className="text-blue-600 hover:underline">{selectedRequirement.title}</Link></h2>
-                {selectedRequirement.startDate && selectedRequirement.endDate && (
-                  <p className="text-gray-600 mt-1">
-                    {formatDateBeijing(selectedRequirement.startDate)} - {formatDateBeijing(selectedRequirement.endDate)}
-                  </p>
-                )}
+      {/* Roadmap 主体 */}
+      <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] shadow-[var(--ds-shadow-card)] overflow-hidden">
+        <div className="overflow-x-auto">
+          <div style={{ minWidth: NAME_COL_WIDTH + CELL_WIDTH * DAYS_TO_SHOW }}>
+            {/* 月份头部 */}
+            <div className="flex border-b border-[var(--ds-border-default)]">
+              <div
+                className="flex-shrink-0 px-4 py-2 bg-[var(--ds-bg-hover)] border-r border-[var(--ds-border-default)]"
+                style={{ width: NAME_COL_WIDTH }}
+              >
+                <span className="text-[var(--ds-font-size-xs)] font-semibold text-[var(--ds-text-secondary)] uppercase">任务</span>
               </div>
-              <button onClick={() => setSelectedRequirement(null)}
-                      className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+              <div className="flex">
+                {weeks.map((week, weekIndex) => {
+                  const month = week.weekStart.getMonth() + 1
+                  const showMonth = weekIndex === 0 || week.days[0].getDate() <= 7
+                  return (
+                    <div
+                      key={weekIndex}
+                      className="text-center border-r border-[var(--ds-border-default)] bg-[var(--ds-bg-hover)]"
+                      style={{ width: CELL_WIDTH * 7 }}
+                    >
+                      {showMonth && (
+                        <div className="text-[var(--ds-font-size-xs)] font-semibold text-[var(--ds-text-primary)] py-1">
+                          {month}月
+                        </div>
+                      )}
+                      {!showMonth && <div className="py-1">&nbsp;</div>}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
 
-            {selectedRequirement.links.length > 0 && (
-              <div className="mt-4">
-                <h3 className="text-lg font-semibold mb-2">相关链接</h3>
-                <div className="space-y-1">
-                  {selectedRequirement.links.map((link, index) => (
-                    <div key={index}>
-                      <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">{link.title}</a>
+            {/* 日期头部 */}
+            <div className="flex border-b border-[var(--ds-border-default)]">
+              <div
+                className="flex-shrink-0 px-4 py-2 bg-[var(--ds-bg-page)] border-r border-[var(--ds-border-default)]"
+                style={{ width: NAME_COL_WIDTH }}
+              />
+              <div className="flex relative">
+                {dates.map((date, index) => {
+                  const isTodayDate = isToday(date)
+                  const isWeekend = date.getDay() === 0 || date.getDay() === 6
+                  return (
+                    <div
+                      key={index}
+                      className={`text-center border-r border-[var(--ds-border-default)] py-1.5 ${
+                        isTodayDate
+                          ? 'bg-[var(--ds-brand-primary)] text-white'
+                          : isWeekend
+                            ? 'bg-[var(--ds-bg-page)] text-[var(--ds-text-disabled)]'
+                            : 'bg-[var(--ds-bg-page)] text-[var(--ds-text-secondary)]'
+                      }`}
+                      style={{ width: CELL_WIDTH }}
+                    >
+                      <div className="text-[10px] font-medium">
+                        {date.getDate()}
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  )
+                })}
               </div>
-            )}
+            </div>
 
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-4">相关人员</h3>
+            {/* 任务列表 */}
+            {visibleTasks.length === 0 ? (
+              <div className="py-12 text-center text-[var(--ds-text-disabled)]">
+                当前时间范围内没有任务
+              </div>
+            ) : (
+              visibleTasks.map((task, taskIndex) => {
+                const position = getTaskPosition(task)
+                if (!position) return null
 
-              {/* 按职能分组显示 */}
-              {roleOrder.map(role => {
-                const rolePersonnel = selectedRequirement.personnel
-                  .filter(p => p.userRole === role)
-                  .sort((a, b) => a.userName.localeCompare(b.userName, 'zh-CN'))
-
-                if (rolePersonnel.length === 0) return null
+                const color = getTaskColor(taskIndex)
 
                 return (
-                  <div key={role} className="mb-6">
-                    <div className="text-md font-semibold text-gray-700 mb-2 bg-gray-100 px-3 py-2 rounded">
-                      {roleLabels[role]}
-                    </div>
-                    <div className="space-y-2 pl-4">
-                      {rolePersonnel.map(person => (
-                        <div key={person.userId} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                          <Link href={`/person/${person.userId}`}
-                                className="text-blue-600 hover:underline font-medium">
-                            {person.userName}
-                          </Link>
-                          <div className="text-sm text-gray-600">
-                            正在做：{person.currentTask || <span className="text-gray-400">无</span>}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
-
-              {selectedRequirement.personnel.length === 0 && (
-                <div className="text-gray-400 text-center py-8">
-                  暂无相关人员
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="max-w-[1600px] mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <Link href="/team" className="text-blue-600 hover:underline">
-              ← 返回团队视图
-            </Link>
-            <h1 className="text-3xl font-bold text-gray-900">
-              周视图 - {weekLabel}
-            </h1>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => changeWeek(-1)}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              上周
-            </button>
-            <button
-              onClick={() => changeWeek(1)}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              下周
-            </button>
-          </div>
-        </div>
-
-        {/* Week Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          {/* Table Header */}
-          <div className="grid grid-cols-8 border-b bg-gray-50">
-            <div className="p-3 font-semibold text-gray-700 border-r">
-              人员
-            </div>
-            {weekDays.map((day, index) => {
-              const weekDayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-              const todayHighlight = isToday(day)
-              return (
-                <div
-                  key={index}
-                  className={`p-3 text-center font-semibold ${
-                    todayHighlight ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
-                  }`}
-                >
-                  <div>{weekDayNames[index]}</div>
-                  <div className="text-sm font-normal">
-                    {day.getMonth() + 1}/{day.getDate()}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Table Body - Grouped by Role */}
-          {roleOrder.map(role => {
-            const roleUsers = sortedUsers.filter(u => u.role === role)
-            if (roleUsers.length === 0) return null
-
-            return (
-              <div key={role} className="border-b last:border-b-0">
-                {/* Role Header Row */}
-                <div className="bg-gray-100 px-4 py-2 font-semibold text-gray-700 border-b">
-                  {roleLabels[role]}
-                </div>
-
-                {/* User Rows */}
-                {roleUsers.map(user => (
-                  <div key={user.id} className="grid grid-cols-8 border-b last:border-b-0 hover:bg-gray-50">
-                    {/* Person Name Cell */}
-                    <div className="p-3 border-r">
+                  <div
+                    key={task.id}
+                    className="flex border-b border-[var(--ds-border-default)] hover:bg-[var(--ds-bg-hover)]/30 transition-colors"
+                  >
+                    {/* 任务信息列 */}
+                    <div
+                      className="flex-shrink-0 px-3 py-2 border-r border-[var(--ds-border-default)] flex items-center gap-2"
+                      style={{ width: NAME_COL_WIDTH }}
+                    >
+                      {task.code && <CodeBadge code={task.code} type="task" size="sm" />}
                       <Link
-                        href={`/person/${user.id}`}
-                        className="text-blue-600 hover:underline font-medium"
+                        href={`/task/${task.id}`}
+                        className="flex-1 text-[var(--ds-font-size-sm)] text-[var(--ds-text-primary)] hover:text-[var(--ds-brand-primary)] truncate"
+                        title={task.title}
                       >
-                        {user.name}
+                        {task.title}
                       </Link>
                     </div>
 
-                    {/* Day Cells */}
-                    {weekDays.map((day, dayIndex) => {
-                      const task = getHighestPriorityTaskForDate(user.id, day)
-                      const isTodayCell = isToday(day)
+                    {/* 甘特图区域 */}
+                    <div className="flex-1 relative" style={{ height: 40 }}>
+                      {/* 网格背景 */}
+                      <div className="absolute inset-0 flex">
+                        {dates.map((date, index) => {
+                          const isWeekend = date.getDay() === 0 || date.getDay() === 6
+                          return (
+                            <div
+                              key={index}
+                              className={`border-r border-[var(--ds-border-default)] ${
+                                isWeekend ? 'bg-[var(--ds-bg-page)]/50' : ''
+                              }`}
+                              style={{ width: CELL_WIDTH }}
+                            />
+                          )
+                        })}
+                      </div>
 
-                      return (
+                      {/* 今天的标记线 */}
+                      {todayOffset >= 0 && (
                         <div
-                          key={dayIndex}
-                          className={`p-2 min-h-[60px] ${
-                            isTodayCell ? 'bg-blue-50' : ''
-                          }`}
-                        >
-                          {task ? (
-                            <div className="relative group">
-                              <div
-                                onClick={() => openTaskModal(task)}
-                                className={`text-xs p-2 rounded block cursor-pointer ${
-                                  task.type === 'IN_REQUIREMENT'
-                                    ? 'bg-blue-100 hover:bg-blue-200'
-                                    : 'bg-green-100 hover:bg-green-200'
-                                }`}
-                                title={formatTaskTitle(task)}
-                              >
-                                <div className="font-medium truncate">
-                                  {formatTaskTitle(task)}
-                                </div>
-                                <div className="text-gray-600 mt-1">
-                                  优先级: {task.priority}
-                                </div>
-                              </div>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleDeleteTask(task.id)
-                                }}
-                                className="absolute top-0 right-0 px-1.5 py-0.5 bg-red-100 text-red-700 rounded-bl rounded-tr text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                                title="删除任务"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="text-gray-400 text-xs text-center pt-4">
-                              -
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                ))}
-              </div>
-            )
-          })}
-        </div>
+                          className="absolute top-0 bottom-0 w-0.5 bg-[var(--ds-brand-primary)] z-10"
+                          style={{ left: todayOffset * CELL_WIDTH + CELL_WIDTH / 2 }}
+                        />
+                      )}
 
-        {users.length === 0 && (
-          <div className="mt-6 text-center text-gray-500">
-            还没有团队成员，请先添加
+                      {/* 任务条 */}
+                      <div
+                        className="absolute top-1.5 bottom-1.5 rounded-[var(--ds-radius-sm)] flex items-center px-2 cursor-pointer transition-all hover:opacity-90 group"
+                        style={{
+                          left: position.startOffset * CELL_WIDTH + 2,
+                          width: position.width * CELL_WIDTH - 4,
+                          backgroundColor: color.bg,
+                        }}
+                      >
+                        <Link
+                          href={`/task/${task.id}`}
+                          className="flex items-center gap-1.5 w-full min-w-0"
+                        >
+                          <span className="text-white text-[11px] font-medium truncate">
+                            {task.code && `${task.code} `}{task.title}
+                          </span>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            )}
           </div>
-        )}
+        </div>
+      </div>
+
+      {/* 图例 */}
+      <div className="mt-4 flex items-center gap-4 text-[var(--ds-font-size-xs)] text-[var(--ds-text-secondary)]">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-sm bg-[var(--ds-brand-primary)]" />
+          <span>今天</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-sm bg-[var(--ds-bg-page)]" />
+          <span>周末</span>
+        </div>
       </div>
     </div>
   )

@@ -33,6 +33,11 @@ interface Task {
   id: string
   code?: string
   status: string
+  title?: string
+  priority?: number
+  planStartDate?: string
+  planEndDate?: string
+  user?: User
 }
 
 interface Requirement {
@@ -102,12 +107,8 @@ export default function ProjectsPage() {
   const [newReqLinkTitle, setNewReqLinkTitle] = useState('')
   const [newReqLinkUrl, setNewReqLinkUrl] = useState('')
   const [editingProject, setEditingProject] = useState<Project | null>(null)
-  const [collapsedSections, setCollapsedSections] = useState<{ projects: boolean; requirements: boolean; tasks: boolean }>({
-    projects: false,
-    requirements: false,
-    tasks: false,
-  })
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set())
+  const [expandedRequirements, setExpandedRequirements] = useState<Set<string>>(new Set())
 
   const roleOrder = ['MANAGEMENT', 'FRONTEND', 'BACKEND', 'PRODUCT', 'OPERATIONS', 'STRATEGY']
   const roleLabels: Record<string, string> = {
@@ -423,6 +424,38 @@ export default function ProjectsPage() {
     })
   }
 
+  const toggleRequirementExpand = (requirementId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setExpandedRequirements(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(requirementId)) {
+        newSet.delete(requirementId)
+      } else {
+        newSet.add(requirementId)
+      }
+      return newSet
+    })
+  }
+
+  // 获取需求的状态
+  const getRequirementStatus = (req: Requirement) => {
+    const hasInProgress = req.stages.some(s => s.status === 'IN_PROGRESS')
+    const hasPending = req.stages.some(s => s.status === 'PENDING')
+    const allCompleted = req.stages.length > 0 && req.stages.every(s => s.status === 'COMPLETED')
+
+    if (allCompleted) return { label: '已完成', color: 'var(--ds-status-success)', bg: 'var(--ds-status-success-bg)' }
+    if (hasInProgress) return { label: '进行中', color: 'var(--ds-status-info)', bg: 'var(--ds-status-info-bg)' }
+    if (hasPending) return { label: '待开始', color: 'var(--ds-text-secondary)', bg: 'var(--ds-bg-hover)' }
+    return { label: '待规划', color: 'var(--ds-text-disabled)', bg: 'var(--ds-bg-page)' }
+  }
+
+  // 获取任务状态
+  const getTaskStatus = (task: Task) => {
+    if (task.status === 'COMPLETED') return { label: '已完成', color: 'var(--ds-status-success)', bg: 'var(--ds-status-success-bg)' }
+    if (task.status === 'IN_PROGRESS') return { label: '进行中', color: 'var(--ds-status-info)', bg: 'var(--ds-status-info-bg)' }
+    return { label: '待开始', color: 'var(--ds-text-secondary)', bg: 'var(--ds-bg-hover)' }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -506,57 +539,12 @@ export default function ProjectsPage() {
       {/* 页面头部 */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-[var(--ds-font-size-xxl)] font-bold text-[var(--ds-text-primary)]">项目视图</h1>
-        <div className="flex gap-2">
-          <Link href="/project/new">
-            <Button variant="primary" size="sm">+ 添加项目</Button>
-          </Link>
-          <Link href="/requirement/new">
-            <Button variant="secondary" size="sm">+ 添加需求</Button>
-          </Link>
-          <Link href="/manage">
-            <Button variant="secondary" size="sm">+ 添加任务</Button>
-          </Link>
-        </div>
-      </div>
-
-      {/* 筛选/折叠按钮 */}
-      <div className="flex gap-1 mb-4 p-1 bg-[var(--ds-bg-hover)] rounded-[var(--ds-radius-md)] w-fit">
-        <button
-          className={`px-3 py-1.5 text-[var(--ds-font-size-sm)] rounded-[var(--ds-radius-sm)] transition-colors ${
-            !collapsedSections.projects
-              ? 'bg-[var(--ds-bg-card)] text-[var(--ds-text-primary)] shadow-sm'
-              : 'text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)]'
-          }`}
-          onClick={() => setCollapsedSections(s => ({ ...s, projects: !s.projects }))}
-        >
-          项目
-        </button>
-        <button
-          className={`px-3 py-1.5 text-[var(--ds-font-size-sm)] rounded-[var(--ds-radius-sm)] transition-colors ${
-            !collapsedSections.requirements
-              ? 'bg-[var(--ds-bg-card)] text-[var(--ds-text-primary)] shadow-sm'
-              : 'text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)]'
-          }`}
-          onClick={() => setCollapsedSections(s => ({ ...s, requirements: !s.requirements }))}
-        >
-          独立需求
-        </button>
-        <button
-          className={`px-3 py-1.5 text-[var(--ds-font-size-sm)] rounded-[var(--ds-radius-sm)] transition-colors ${
-            !collapsedSections.tasks
-              ? 'bg-[var(--ds-bg-card)] text-[var(--ds-text-primary)] shadow-sm'
-              : 'text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)]'
-          }`}
-          onClick={() => setCollapsedSections(s => ({ ...s, tasks: !s.tasks }))}
-        >
-          独立任务
-        </button>
       </div>
 
       {/* 项目列表 */}
       <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] shadow-[var(--ds-shadow-card)] overflow-hidden">
         {/* 表头 */}
-        {!collapsedSections.projects && sortedProjects.length > 0 && (
+        {sortedProjects.length > 0 && (
           <div className="grid grid-cols-12 gap-4 px-4 py-2.5 bg-[var(--ds-bg-hover)] border-b border-[var(--ds-border-default)] text-[var(--ds-font-size-xs)] font-semibold text-[var(--ds-text-secondary)] uppercase tracking-wide">
             <div className="col-span-5">项目名称</div>
             <div className="col-span-1 text-center">优先级</div>
@@ -566,7 +554,7 @@ export default function ProjectsPage() {
           </div>
         )}
 
-        {!collapsedSections.projects && sortedProjects.map(project => {
+        {sortedProjects.map(project => {
           const currentReq = getCurrentRequirement(project)
           const nextReq = getNextRequirement(project)
           const isExpanded = expandedProjects.has(project.id)
@@ -662,142 +650,248 @@ export default function ProjectsPage() {
                 </div>
               </div>
 
-              {/* 展开内容 */}
+              {/* 展开内容 - Jira Backlog 样式 */}
               {isExpanded && editingProject?.id !== project.id && (
-                <div className="px-4 py-4 bg-[var(--ds-bg-page)] border-t border-[var(--ds-border-default)]">
+                <div className="bg-[var(--ds-bg-page)] border-t border-[var(--ds-border-default)]">
                   {project.description && (
-                    <p className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)] mb-4 pl-8">{project.description}</p>
+                    <p className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)] px-4 py-3 border-b border-[var(--ds-border-default)]">{project.description}</p>
                   )}
 
-                  {/* 当前/下一个需求 */}
-                  <div className="grid grid-cols-2 gap-4 mb-4 pl-8">
-                    <div className="p-3 rounded-[var(--ds-radius-md)] bg-[var(--ds-bg-card)] border-l-4 border-[var(--ds-brand-primary)]">
-                      <div className="text-[var(--ds-font-size-xs)] font-semibold text-[var(--ds-text-secondary)] uppercase tracking-wide mb-2">当前进行</div>
-                      {currentReq ? (
-                        <div>
-                          <div className="flex items-center gap-2">
-                            {currentReq.code && <CodeBadge code={currentReq.code} type="requirement" size="sm" />}
-                            <Link href={`/requirement/${currentReq.id}`} className="font-medium text-[var(--ds-text-primary)] hover:text-[var(--ds-brand-primary)]">
-                              {currentReq.title}
-                            </Link>
-                          </div>
-                          <div className="text-[var(--ds-font-size-xs)] text-[var(--ds-text-secondary)] mt-1">
-                            {formatDate(currentReq.startDate)} ~ {formatDate(currentReq.endDate)}
-                          </div>
-                          <button onClick={() => showRequirementDetail(currentReq)} className="text-[var(--ds-font-size-xs)] text-[var(--ds-text-link)] hover:underline mt-2">查看相关人员 →</button>
-                        </div>
-                      ) : (
-                        <span className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-disabled)]">暂无进行中的需求</span>
-                      )}
-                    </div>
-
-                    <div className="p-3 rounded-[var(--ds-radius-md)] bg-[var(--ds-bg-card)] border-l-4 border-[var(--ds-border-default)]">
-                      <div className="text-[var(--ds-font-size-xs)] font-semibold text-[var(--ds-text-secondary)] uppercase tracking-wide mb-2">接下来</div>
-                      {nextReq ? (
-                        <div>
-                          <div className="flex items-center gap-2">
-                            {nextReq.code && <CodeBadge code={nextReq.code} type="requirement" size="sm" />}
-                            <Link href={`/requirement/${nextReq.id}`} className="font-medium text-[var(--ds-text-primary)] hover:text-[var(--ds-brand-primary)]">
-                              {nextReq.title}
-                            </Link>
-                          </div>
-                          <div className="text-[var(--ds-font-size-xs)] text-[var(--ds-text-secondary)] mt-1">
-                            {formatDate(nextReq.startDate)} ~ {formatDate(nextReq.endDate)}
-                          </div>
-                          <button onClick={() => showRequirementDetail(nextReq)} className="text-[var(--ds-font-size-xs)] text-[var(--ds-text-link)] hover:underline mt-2">查看相关人员 →</button>
-                        </div>
-                      ) : (
-                        <span className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-disabled)]">暂无待处理需求</span>
-                      )}
-                    </div>
+                  {/* 需求列表头部 */}
+                  <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-[var(--ds-bg-hover)] text-[var(--ds-font-size-xs)] font-semibold text-[var(--ds-text-secondary)] uppercase tracking-wide border-b border-[var(--ds-border-default)]">
+                    <div className="col-span-5 pl-8">需求</div>
+                    <div className="col-span-1 text-center">优先级</div>
+                    <div className="col-span-2 text-center">状态</div>
+                    <div className="col-span-2">日期</div>
+                    <div className="col-span-2 text-right">任务数</div>
                   </div>
 
-                  {/* 添加需求表单 */}
-                  {showRequirementForm === project.id ? (
-                    <div className="bg-[var(--ds-bg-page)] rounded-[var(--ds-radius-md)] p-4 border border-[var(--ds-border-default)]">
-                      <h3 className="font-semibold mb-3">为项目添加需求</h3>
-                      <form onSubmit={(e) => handleCreateRequirement(e, project.id)} className="space-y-3">
-                        <div>
-                          <label className="block text-[var(--ds-font-size-sm)] font-medium mb-1">需求名称</label>
-                          <input
-                            type="text"
-                            value={newRequirement.title}
-                            onChange={(e) => setNewRequirement({ ...newRequirement, title: e.target.value })}
-                            required
-                            className="w-full px-3 py-2 border border-[var(--ds-border-default)] rounded-[var(--ds-radius-sm)] text-[var(--ds-font-size-sm)] focus:border-[var(--ds-border-focused)] focus:outline-none"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-[var(--ds-font-size-sm)] font-medium mb-1">开始日期</label>
-                            <input
-                              type="date"
-                              value={newRequirement.startDate}
-                              onChange={(e) => setNewRequirement({ ...newRequirement, startDate: e.target.value })}
-                              className="w-full px-3 py-2 border border-[var(--ds-border-default)] rounded-[var(--ds-radius-sm)] text-[var(--ds-font-size-sm)]"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[var(--ds-font-size-sm)] font-medium mb-1">结束日期 *</label>
-                            <input
-                              type="date"
-                              value={newRequirement.endDate}
-                              onChange={(e) => setNewRequirement({ ...newRequirement, endDate: e.target.value })}
-                              required
-                              className="w-full px-3 py-2 border border-[var(--ds-border-default)] rounded-[var(--ds-radius-sm)] text-[var(--ds-font-size-sm)]"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-[var(--ds-font-size-sm)] font-medium mb-1">优先级（0-5，0最高）</label>
-                          <input
-                            type="number"
-                            value={newRequirement.priority}
-                            onChange={(e) => setNewRequirement({ ...newRequirement, priority: parseInt(e.target.value) })}
-                            min="0"
-                            max="5"
-                            required
-                            className="w-full px-3 py-2 border border-[var(--ds-border-default)] rounded-[var(--ds-radius-sm)] text-[var(--ds-font-size-sm)]"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[var(--ds-font-size-sm)] font-medium mb-1">相关链接（可选）</label>
-                          {reqLinks.length > 0 && (
-                            <div className="space-y-1 mb-2">
-                              {reqLinks.map((link, index) => (
-                                <div key={index} className="flex items-center gap-2 p-1.5 bg-[var(--ds-bg-card)] rounded text-[var(--ds-font-size-sm)]">
-                                  <div className="flex-1 truncate">{link.title} - <span className="text-[var(--ds-text-secondary)]">{link.url}</span></div>
-                                  <button type="button" onClick={() => setReqLinks(reqLinks.filter((_, i) => i !== index))} className="text-[var(--ds-status-error)] hover:opacity-80 text-[var(--ds-font-size-xs)]">删除</button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          {reqLinks.length < 5 && (
-                            <div className="flex gap-2">
-                              <input type="text" placeholder="链接标题" value={newReqLinkTitle} onChange={(e) => setNewReqLinkTitle(e.target.value)} className="flex-1 px-2 py-1.5 border border-[var(--ds-border-default)] rounded text-[var(--ds-font-size-sm)]" />
-                              <input type="url" placeholder="链接URL" value={newReqLinkUrl} onChange={(e) => setNewReqLinkUrl(e.target.value)} className="flex-1 px-2 py-1.5 border border-[var(--ds-border-default)] rounded text-[var(--ds-font-size-sm)]" />
-                              <Button type="button" variant="secondary" size="sm" onClick={() => {
-                                if (!newReqLinkTitle.trim() || !newReqLinkUrl.trim()) { alert('请填写链接标题和URL'); return }
-                                setReqLinks([...reqLinks, { title: newReqLinkTitle, url: newReqLinkUrl }])
-                                setNewReqLinkTitle(''); setNewReqLinkUrl('')
-                              }}>添加</Button>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex gap-2">
-                          <Button type="submit" variant="primary" size="sm">创建需求</Button>
-                          <Button type="button" variant="secondary" size="sm" onClick={() => setShowRequirementForm(null)}>取消</Button>
-                        </div>
-                      </form>
+                  {/* 需求列表 */}
+                  {project.requirements.length === 0 ? (
+                    <div className="py-8 text-center text-[var(--ds-text-disabled)]">
+                      暂无需求
                     </div>
                   ) : (
-                    <button
-                      onClick={() => setShowRequirementForm(project.id)}
-                      className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-link)] hover:underline"
-                    >
-                      + 添加需求
-                    </button>
+                    project.requirements
+                      .sort((a, b) => a.priority - b.priority)
+                      .map(req => {
+                        const reqStatus = getRequirementStatus(req)
+                        const isReqExpanded = expandedRequirements.has(req.id)
+
+                        return (
+                          <div key={req.id} className="border-b border-[var(--ds-border-default)] last:border-b-0">
+                            {/* 需求行 */}
+                            <div
+                              className="grid grid-cols-12 gap-2 px-4 py-2.5 hover:bg-[var(--ds-bg-hover)] cursor-pointer transition-colors items-center"
+                              onClick={(e) => toggleRequirementExpand(req.id, e)}
+                            >
+                              <div className="col-span-5 flex items-center gap-2">
+                                {/* 展开图标 */}
+                                <button className="w-5 h-5 flex items-center justify-center text-[var(--ds-text-secondary)] flex-shrink-0">
+                                  <svg
+                                    width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                                    className={`transform transition-transform ${isReqExpanded ? 'rotate-90' : ''}`}
+                                  >
+                                    <polyline points="9 18 15 12 9 6" />
+                                  </svg>
+                                </button>
+
+                                {/* 需求图标 */}
+                                <div className="w-5 h-5 rounded bg-[var(--ds-status-success)] flex items-center justify-center flex-shrink-0">
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                                    <circle cx="12" cy="12" r="10" />
+                                  </svg>
+                                </div>
+
+                                {/* 编号 */}
+                                {req.code && <CodeBadge code={req.code} type="requirement" size="sm" />}
+
+                                {/* 标题 */}
+                                <Link
+                                  href={`/requirement/${req.id}`}
+                                  className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-primary)] hover:text-[var(--ds-brand-primary)] truncate"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title={req.title}
+                                >
+                                  {req.title}
+                                </Link>
+                              </div>
+
+                              {/* 优先级 */}
+                              <div className="col-span-1 flex justify-center">
+                                <PriorityBadge priority={req.priority} size="sm" />
+                              </div>
+
+                              {/* 状态 */}
+                              <div className="col-span-2 flex justify-center">
+                                <span
+                                  className="px-2 py-0.5 rounded text-[var(--ds-font-size-xs)] font-medium"
+                                  style={{ backgroundColor: reqStatus.bg, color: reqStatus.color }}
+                                >
+                                  {reqStatus.label}
+                                </span>
+                              </div>
+
+                              {/* 日期 */}
+                              <div className="col-span-2 text-[var(--ds-font-size-xs)] text-[var(--ds-text-secondary)]">
+                                {formatDate(req.startDate)} ~ {formatDate(req.endDate)}
+                              </div>
+
+                              {/* 任务数 */}
+                              <div className="col-span-2 text-right">
+                                <span className="text-[var(--ds-font-size-xs)] text-[var(--ds-text-secondary)]">
+                                  {req.tasks.length} 个任务
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* 任务列表 */}
+                            {isReqExpanded && req.tasks.length > 0 && (
+                              <div className="bg-[var(--ds-bg-card)] border-t border-[var(--ds-border-default)]">
+                                {req.tasks.map(task => {
+                                  const taskStatus = getTaskStatus(task)
+                                  return (
+                                    <div
+                                      key={task.id}
+                                      className="grid grid-cols-12 gap-2 px-4 py-2 hover:bg-[var(--ds-bg-hover)] transition-colors items-center border-b border-[var(--ds-border-default)] last:border-b-0"
+                                    >
+                                      <div className="col-span-5 flex items-center gap-2 pl-12">
+                                        {/* 任务图标 */}
+                                        <div className="w-4 h-4 rounded bg-[var(--ds-status-info)] flex items-center justify-center flex-shrink-0">
+                                          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                                            <polyline points="20 6 9 17 4 12" />
+                                          </svg>
+                                        </div>
+
+                                        {/* 编号 */}
+                                        {task.code && <CodeBadge code={task.code} type="task" size="sm" />}
+
+                                        {/* 标题 */}
+                                        <Link
+                                          href={`/task/${task.id}`}
+                                          className="text-[var(--ds-font-size-sm)] text-[var(--ds-text-primary)] hover:text-[var(--ds-brand-primary)] truncate"
+                                          title={task.title || ''}
+                                        >
+                                          {task.title || task.code || task.id}
+                                        </Link>
+                                      </div>
+
+                                      {/* 优先级 */}
+                                      <div className="col-span-1 flex justify-center">
+                                        {task.priority !== undefined && <PriorityBadge priority={task.priority} size="sm" />}
+                                      </div>
+
+                                      {/* 状态 */}
+                                      <div className="col-span-2 flex justify-center">
+                                        <span
+                                          className="px-2 py-0.5 rounded text-[var(--ds-font-size-xs)] font-medium"
+                                          style={{ backgroundColor: taskStatus.bg, color: taskStatus.color }}
+                                        >
+                                          {taskStatus.label}
+                                        </span>
+                                      </div>
+
+                                      {/* 日期 */}
+                                      <div className="col-span-2 text-[var(--ds-font-size-xs)] text-[var(--ds-text-secondary)]">
+                                        {task.planStartDate && task.planEndDate
+                                          ? `${formatDate(task.planStartDate)} ~ ${formatDate(task.planEndDate)}`
+                                          : '-'}
+                                      </div>
+
+                                      {/* 负责人 */}
+                                      <div className="col-span-2 flex justify-end">
+                                        {task.user && (
+                                          <AssigneeAvatar users={[{ id: task.user.id, name: task.user.name }]} size="sm" />
+                                        )}
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )}
+
+                            {/* 无任务提示 */}
+                            {isReqExpanded && req.tasks.length === 0 && (
+                              <div className="py-4 pl-16 text-[var(--ds-font-size-sm)] text-[var(--ds-text-disabled)] bg-[var(--ds-bg-card)] border-t border-[var(--ds-border-default)]">
+                                暂无任务
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })
                   )}
+
+                  {/* 添加需求按钮 */}
+                  <div className="px-4 py-3 border-t border-[var(--ds-border-default)]">
+                    {showRequirementForm === project.id ? (
+                      <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-md)] p-4 border border-[var(--ds-border-default)]">
+                        <h3 className="font-semibold mb-3 text-[var(--ds-font-size-sm)]">为项目添加需求</h3>
+                        <form onSubmit={(e) => handleCreateRequirement(e, project.id)} className="space-y-3">
+                          <div>
+                            <label className="block text-[var(--ds-font-size-sm)] font-medium mb-1">需求名称</label>
+                            <input
+                              type="text"
+                              value={newRequirement.title}
+                              onChange={(e) => setNewRequirement({ ...newRequirement, title: e.target.value })}
+                              required
+                              className="w-full px-3 py-2 border border-[var(--ds-border-default)] rounded-[var(--ds-radius-sm)] text-[var(--ds-font-size-sm)] focus:border-[var(--ds-border-focused)] focus:outline-none"
+                            />
+                          </div>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div>
+                              <label className="block text-[var(--ds-font-size-sm)] font-medium mb-1">开始日期</label>
+                              <input
+                                type="date"
+                                value={newRequirement.startDate}
+                                onChange={(e) => setNewRequirement({ ...newRequirement, startDate: e.target.value })}
+                                className="w-full px-3 py-2 border border-[var(--ds-border-default)] rounded-[var(--ds-radius-sm)] text-[var(--ds-font-size-sm)]"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[var(--ds-font-size-sm)] font-medium mb-1">结束日期 *</label>
+                              <input
+                                type="date"
+                                value={newRequirement.endDate}
+                                onChange={(e) => setNewRequirement({ ...newRequirement, endDate: e.target.value })}
+                                required
+                                className="w-full px-3 py-2 border border-[var(--ds-border-default)] rounded-[var(--ds-radius-sm)] text-[var(--ds-font-size-sm)]"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[var(--ds-font-size-sm)] font-medium mb-1">优先级</label>
+                              <select
+                                value={newRequirement.priority}
+                                onChange={(e) => setNewRequirement({ ...newRequirement, priority: parseInt(e.target.value) })}
+                                className="w-full px-3 py-2 border border-[var(--ds-border-default)] rounded-[var(--ds-radius-sm)] text-[var(--ds-font-size-sm)]"
+                              >
+                                <option value="0">P0 - 最高</option>
+                                <option value="1">P1 - 高</option>
+                                <option value="2">P2 - 中</option>
+                                <option value="3">P3 - 低</option>
+                                <option value="4">P4 - 较低</option>
+                                <option value="5">P5 - 最低</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button type="submit" variant="primary" size="sm">创建需求</Button>
+                            <Button type="button" variant="secondary" size="sm" onClick={() => setShowRequirementForm(null)}>取消</Button>
+                          </div>
+                        </form>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setShowRequirementForm(project.id)}
+                        className="flex items-center gap-2 text-[var(--ds-font-size-sm)] text-[var(--ds-text-link)] hover:text-[var(--ds-brand-primary)]"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="12" y1="5" x2="12" y2="19" />
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        添加需求
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -856,7 +950,7 @@ export default function ProjectsPage() {
         })}
 
         {/* 空状态 */}
-        {!collapsedSections.projects && sortedProjects.length === 0 && (
+        {sortedProjects.length === 0 && (
           <div className="text-center py-12 text-[var(--ds-text-disabled)]">
             暂无项目，点击上方"+ 添加项目"创建
           </div>
@@ -864,7 +958,7 @@ export default function ProjectsPage() {
       </div>
 
       {/* 独立需求 */}
-      {!collapsedSections.requirements && standaloneRequirements.length > 0 && (
+      {standaloneRequirements.length > 0 && (
         <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] shadow-[var(--ds-shadow-card)] overflow-hidden mt-6">
           <div className="px-4 py-3 bg-[var(--ds-bg-hover)] border-b border-[var(--ds-border-default)]">
             <h2 className="text-[var(--ds-font-size-md)] font-semibold text-[var(--ds-text-primary)]">独立需求</h2>
@@ -901,7 +995,7 @@ export default function ProjectsPage() {
       )}
 
       {/* 独立任务 */}
-      {!collapsedSections.tasks && standaloneTasks.length > 0 && (
+      {standaloneTasks.length > 0 && (
         <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] shadow-[var(--ds-shadow-card)] overflow-hidden mt-6">
           <div className="px-4 py-3 bg-[var(--ds-bg-hover)] border-b border-[var(--ds-border-default)]">
             <h2 className="text-[var(--ds-font-size-md)] font-semibold text-[var(--ds-text-primary)]">独立任务（进行中）</h2>

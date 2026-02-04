@@ -332,6 +332,7 @@ export default function TeamPage() {
                               >
                                 {formatTaskText(task)}
                               </Link>
+                              <PriorityBadge priority={task.priority} size="sm" />
                               <span className="text-[var(--ds-font-size-xs)] text-[var(--ds-text-disabled)] whitespace-nowrap bg-[var(--ds-bg-hover)] px-1.5 py-0.5 rounded">
                                 {formatDate(task.planStartDate)}
                               </span>
