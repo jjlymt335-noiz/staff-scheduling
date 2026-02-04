@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getBeijingToday, formatDateBeijing } from '@/lib/timezone'
+import { Button } from '@/components/ui'
+import { CodeBadge, PriorityBadge, AssigneeAvatar } from '@/components/issue'
 
 interface User {
   id: string
@@ -88,14 +90,10 @@ export default function TeamPage() {
   }
 
   const handleDeleteTask = async (taskId: string) => {
-    if (!confirm('确定要删除这个任务吗？')) {
-      return
-    }
+    if (!confirm('确定要删除这个任务吗？')) return
 
     try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
-        method: 'DELETE'
-      })
+      const response = await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' })
       if (response.ok) {
         fetchData()
         alert('任务删除成功！')
@@ -109,19 +107,15 @@ export default function TeamPage() {
     }
   }
 
-  // 获取用户的当前任务和下一个任务（考虑并发任务规则）
   const getCurrentAndNextTasks = (userId: string) => {
     const today = getBeijingToday()
 
-    // 获取包含今天的任务
     const todayTasks = tasks
       .filter((task) => {
         if (task.user.id !== userId) return false
-
         const startDate = new Date(task.planStartDate)
         startDate.setHours(0, 0, 0, 0)
 
-        // 计算effectiveEnd
         let effectiveEnd: Date
         if (task.actualEndDate) {
           effectiveEnd = new Date(task.actualEndDate)
@@ -136,7 +130,6 @@ export default function TeamPage() {
       })
       .sort((a, b) => a.priority - b.priority)
 
-    // 获取未来任务（先按开始时间排序，再按优先级排序）
     const futureTasks = tasks
       .filter((task) => {
         if (task.user.id !== userId) return false
@@ -145,26 +138,19 @@ export default function TeamPage() {
         return startDate > today
       })
       .sort((a, b) => {
-        // 先按开始时间排序
         const timeCompare = new Date(a.planStartDate).getTime() - new Date(b.planStartDate).getTime()
         if (timeCompare !== 0) return timeCompare
-        // 时间相同再按优先级排序
         return a.priority - b.priority
       })
 
-    // 返回当前任务和下一个任务（始终显示未来任务）
     return {
-      currentTasks: todayTasks.slice(0, 2), // 最多显示2个当前任务
-      nextTasks: futureTasks.slice(0, 3)    // 最多显示3个未来任务
+      currentTasks: todayTasks.slice(0, 2),
+      nextTasks: futureTasks.slice(0, 3)
     }
   }
 
-  // 格式化日期
-  const formatDate = (dateStr: string) => {
-    return formatDateBeijing(dateStr)
-  }
+  const formatDate = (dateStr: string) => formatDateBeijing(dateStr)
 
-  // 检查任务是否延期
   const isOverdue = (task: Task) => {
     let effectiveEnd: Date
     if (task.actualEndDate) {
@@ -174,30 +160,20 @@ export default function TeamPage() {
     } else {
       effectiveEnd = new Date(task.planEndDate)
     }
-
     const planEnd = new Date(task.planEndDate)
     return effectiveEnd > planEnd
   }
 
-  // 格式化任务显示文本（编号-项目-需求-任务）
   const formatTaskText = (task: Task) => {
-    const taskCode = task.code ? `[${task.code}] ` : ''
     if (task.type === 'IN_REQUIREMENT' && task.requirement) {
-      const reqCode = task.requirement.code ? `[${task.requirement.code}] ` : ''
       if (task.requirement.project) {
-        const projCode = task.requirement.project.code ? `[${task.requirement.project.code}] ` : ''
-        // 有项目和需求：任务编号 项目编号 项目名-需求编号 需求名-任务名
-        return `${taskCode}${projCode}${task.requirement.project.title}-${reqCode}${task.requirement.title}-${task.title}`
-      } else {
-        // 只有需求：任务编号 需求编号 需求名-任务名
-        return `${taskCode}${reqCode}${task.requirement.title}-${task.title}`
+        return `${task.requirement.project.title} - ${task.requirement.title} - ${task.title}`
       }
+      return `${task.requirement.title} - ${task.title}`
     }
-    // 独立任务：编号 任务名
-    return `${taskCode}${task.title}`
+    return task.title
   }
 
-  // 按职能分组用户
   const groupedUsers = roleOrder.reduce((acc, role) => {
     const roleUsers = users
       .filter((u) => u.role === role)
@@ -210,155 +186,164 @@ export default function TeamPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">加载中...</div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-[var(--ds-text-secondary)]">加载中...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">团队视图</h1>
-          <div className="flex gap-3">
-            <Link
-              href="/calendar"
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-            >
-              📅 日历视图
-            </Link>
-            <Link
-              href="/projects"
-              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-            >
-              📊 项目视图
-            </Link>
-            <Link
-              href="/requirement/new"
-              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-            >
-              ➕ 添加需求
-            </Link>
-            <Link
-              href="/manage"
-              className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
-            >
-              ✏️ 添加任务
-            </Link>
-            <Link
-              href="/setup"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
+    <div>
+      {/* 页面头部 */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-[var(--ds-font-size-xxl)] font-bold text-[var(--ds-text-primary)]">团队视图</h1>
+        <div className="flex gap-2">
+          <Link href="/requirement/new">
+            <Button variant="primary" size="sm">+ 添加需求</Button>
+          </Link>
+          <Link href="/manage">
+            <Button variant="secondary" size="sm">+ 添加任务</Button>
+          </Link>
+          <Link href="/setup">
+            <Button variant="secondary" size="sm">+ 添加成员</Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* 团队表格 */}
+      <div className="bg-[var(--ds-bg-card)] rounded-[var(--ds-radius-lg)] shadow-[var(--ds-shadow-card)] overflow-hidden">
+        {/* 表头 */}
+        <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-[var(--ds-bg-hover)] border-b border-[var(--ds-border-default)] text-[var(--ds-font-size-sm)] font-semibold text-[var(--ds-text-secondary)]">
+          <div className="col-span-2">成员</div>
+          <div className="col-span-5">当前任务</div>
+          <div className="col-span-5">下一个任务</div>
+        </div>
+
+        {/* 按职能分组显示 */}
+        {Object.entries(groupedUsers).map(([role, roleUsers]) => (
+          <div key={role}>
+            {/* 职能标题 */}
+            <div className="px-4 py-2 bg-[var(--ds-bg-page)] border-b border-[var(--ds-border-default)]">
+              <span className="text-[var(--ds-font-size-sm)] font-semibold text-[var(--ds-text-primary)]">
+                {roleLabels[role]}
+              </span>
+              <span className="ml-2 text-[var(--ds-font-size-xs)] text-[var(--ds-text-disabled)]">
+                ({roleUsers.length})
+              </span>
+            </div>
+
+            {/* 用户行 */}
+            {roleUsers.map((user) => {
+              const { currentTasks, nextTasks } = getCurrentAndNextTasks(user.id)
+              return (
+                <div
+                  key={user.id}
+                  className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-[var(--ds-border-default)] hover:bg-[var(--ds-bg-hover)] transition-colors"
+                >
+                  {/* 成员名称 */}
+                  <div className="col-span-2 flex items-center gap-2">
+                    <AssigneeAvatar users={[{ id: user.id, name: user.name }]} size="sm" />
+                    <Link
+                      href={`/person/${user.id}`}
+                      className="text-[var(--ds-text-link)] hover:underline font-medium text-[var(--ds-font-size-sm)]"
+                    >
+                      {user.name}
+                    </Link>
+                  </div>
+
+                  {/* 当前任务 */}
+                  <div className="col-span-5">
+                    {currentTasks.length === 0 ? (
+                      <span className="text-[var(--ds-text-disabled)] text-[var(--ds-font-size-sm)]">无任务</span>
+                    ) : (
+                      <div className="space-y-2">
+                        {currentTasks.map((task) => (
+                          <div
+                            key={task.id}
+                            className={`
+                              flex items-center gap-2 p-2 rounded-[var(--ds-radius-sm)]
+                              ${isOverdue(task) ? 'bg-[var(--ds-status-error-bg)]' : 'bg-[var(--ds-bg-page)]'}
+                            `}
+                          >
+                            {task.code && <CodeBadge code={task.code} type="task" size="sm" />}
+                            <Link
+                              href={`/task/${task.id}`}
+                              className={`
+                                flex-1 text-[var(--ds-font-size-sm)] hover:underline truncate
+                                ${isOverdue(task) ? 'text-[var(--ds-status-error)]' : 'text-[var(--ds-text-primary)]'}
+                              `}
+                              title={formatTaskText(task)}
+                            >
+                              {formatTaskText(task)}
+                            </Link>
+                            <PriorityBadge priority={task.priority} size="sm" />
+                            <button
+                              onClick={() => handleDeleteTask(task.id)}
+                              className="p-1 text-[var(--ds-text-disabled)] hover:text-[var(--ds-status-error)] hover:bg-[var(--ds-status-error-bg)] rounded transition-colors"
+                              title="删除任务"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 下一个任务 */}
+                  <div className="col-span-5">
+                    {nextTasks.length === 0 ? (
+                      <span className="text-[var(--ds-text-disabled)] text-[var(--ds-font-size-sm)]">无任务</span>
+                    ) : (
+                      <div className="space-y-2">
+                        {nextTasks.map((task) => (
+                          <div
+                            key={task.id}
+                            className="flex items-center gap-2 p-2 rounded-[var(--ds-radius-sm)] bg-[var(--ds-bg-page)]"
+                          >
+                            {task.code && <CodeBadge code={task.code} type="task" size="sm" />}
+                            <Link
+                              href={`/task/${task.id}`}
+                              className="flex-1 text-[var(--ds-font-size-sm)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)] hover:underline truncate"
+                              title={formatTaskText(task)}
+                            >
+                              {formatTaskText(task)}
+                            </Link>
+                            <span className="text-[var(--ds-font-size-xs)] text-[var(--ds-text-disabled)] whitespace-nowrap">
+                              {formatDate(task.planStartDate)}
+                            </span>
+                            <button
+                              onClick={() => handleDeleteTask(task.id)}
+                              className="p-1 text-[var(--ds-text-disabled)] hover:text-[var(--ds-status-error)] hover:bg-[var(--ds-status-error-bg)] rounded transition-colors"
+                              title="删除任务"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ))}
+
+        {Object.keys(groupedUsers).length === 0 && (
+          <div className="px-6 py-12 text-center text-[var(--ds-text-disabled)]">
+            还没有团队成员，请先
+            <Link href="/setup" className="text-[var(--ds-text-link)] hover:underline ml-1">
               添加成员
             </Link>
           </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow">
-          <div className="grid grid-cols-3 border-b bg-gray-50 px-6 py-3 font-semibold text-gray-700">
-            <div>职能 & 名称</div>
-            <div>当前任务</div>
-            <div>下一个任务</div>
-          </div>
-          {Object.entries(groupedUsers).map(([role, roleUsers]) => (
-            <div key={role} className="border-b last:border-b-0">
-              <div className="bg-gray-100 px-6 py-3 font-semibold text-gray-700">
-                {roleLabels[role]}
-              </div>
-              {roleUsers.map((user) => {
-                const { currentTasks, nextTasks } = getCurrentAndNextTasks(user.id)
-                return (
-                  <div key={user.id} className="grid grid-cols-3 px-6 py-4 hover:bg-gray-50 border-b">
-                    <div>
-                      <Link href={`/person/${user.id}`} className="text-blue-600 hover:underline font-medium">
-                        {user.name}
-                      </Link>
-                    </div>
-
-                    <div>
-                      {currentTasks.length === 0 ? (
-                        <span className="text-gray-400">无</span>
-                      ) : (
-                        <div className="space-y-1">
-                          {currentTasks.map((task) => (
-                            <div key={task.id} className={`${isOverdue(task) ? 'text-red-600' : ''}`}>
-                              <div className="flex items-center justify-between">
-                                <Link
-                                  href={`/task/${task.id}`}
-                                  className="text-sm hover:underline"
-                                >
-                                  {formatTaskText(task)}
-                                </Link>
-                                <button
-                                  onClick={() => handleDeleteTask(task.id)}
-                                  className="ml-2 px-1.5 py-0.5 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
-                                  title="删除任务"
-                                >
-                                  ×
-                                </button>
-                              </div>
-                              {task.predecessors && task.predecessors.length > 0 && (
-                                <div className="text-xs text-gray-500 ml-2">
-                                  前置: <Link href={`/task/${task.predecessors[0].predecessor.id}`} className="text-blue-500 hover:underline">[{task.predecessors[0].predecessor.code}] {task.predecessors[0].predecessor.title}</Link>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      {nextTasks.length === 0 ? (
-                        <span className="text-gray-400">无</span>
-                      ) : (
-                        <div className="space-y-1">
-                          {nextTasks.map((task) => (
-                            <div key={task.id} className="text-sm text-gray-600">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <Link
-                                    href={`/task/${task.id}`}
-                                    className="hover:underline"
-                                  >
-                                    {formatTaskText(task)}
-                                  </Link>
-                                  <span className="text-xs text-gray-500 ml-2">
-                                    ({formatDate(task.planStartDate)})
-                                  </span>
-                                </div>
-                                <button
-                                  onClick={() => handleDeleteTask(task.id)}
-                                  className="ml-2 px-1.5 py-0.5 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
-                                  title="删除任务"
-                                >
-                                  ×
-                                </button>
-                              </div>
-                              {task.predecessors && task.predecessors.length > 0 && (
-                                <div className="text-xs text-gray-500 ml-2">
-                                  前置: <Link href={`/task/${task.predecessors[0].predecessor.id}`} className="text-blue-500 hover:underline">[{task.predecessors[0].predecessor.code}] {task.predecessors[0].predecessor.title}</Link>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                  </div>
-                )
-              })}
-            </div>
-          ))}
-
-          {Object.keys(groupedUsers).length === 0 && (
-            <div className="px-6 py-12 text-center text-gray-500">
-              还没有团队成员，请先添加
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   )

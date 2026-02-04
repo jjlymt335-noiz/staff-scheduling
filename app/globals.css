@@ -1,8 +1,94 @@
 @import "tailwindcss";
 
 :root {
+  /* 原有变量 */
   --background: #ffffff;
   --foreground: #171717;
+
+  /* ===== Jira-like 设计令牌 ===== */
+
+  /* 品牌色 */
+  --ds-brand-primary: #0052CC;
+  --ds-brand-primary-hover: #0065FF;
+  --ds-brand-bold: #0747A6;
+
+  /* 背景色 */
+  --ds-bg-page: #F4F5F7;
+  --ds-bg-card: #FFFFFF;
+  --ds-bg-overlay: rgba(9, 30, 66, 0.54);
+  --ds-bg-hover: #EBECF0;
+  --ds-bg-selected: #E4F0FF;
+  --ds-bg-disabled: #F4F5F7;
+
+  /* 文字色 */
+  --ds-text-primary: #172B4D;
+  --ds-text-secondary: #5E6C84;
+  --ds-text-disabled: #A5ADBA;
+  --ds-text-inverse: #FFFFFF;
+  --ds-text-link: #0052CC;
+
+  /* 边框色 */
+  --ds-border-default: #DFE1E6;
+  --ds-border-focused: #4C9AFF;
+
+  /* 状态色 */
+  --ds-status-success: #36B37E;
+  --ds-status-success-bg: #E3FCEF;
+  --ds-status-warning: #FFAB00;
+  --ds-status-warning-bg: #FFFAE6;
+  --ds-status-error: #FF5630;
+  --ds-status-error-bg: #FFEBE6;
+  --ds-status-info: #0065FF;
+  --ds-status-info-bg: #DEEBFF;
+
+  /* 优先级颜色 */
+  --ds-priority-highest: #FF5630;
+  --ds-priority-high: #FF7452;
+  --ds-priority-medium: #FFAB00;
+  --ds-priority-low: #36B37E;
+  --ds-priority-lowest: #6B778C;
+
+  /* 间距 */
+  --ds-space-0: 0;
+  --ds-space-1: 4px;
+  --ds-space-2: 8px;
+  --ds-space-3: 12px;
+  --ds-space-4: 16px;
+  --ds-space-5: 20px;
+  --ds-space-6: 24px;
+  --ds-space-8: 32px;
+  --ds-space-10: 40px;
+  --ds-space-12: 48px;
+
+  /* 圆角 */
+  --ds-radius-sm: 3px;
+  --ds-radius-md: 6px;
+  --ds-radius-lg: 8px;
+  --ds-radius-xl: 12px;
+
+  /* 阴影 */
+  --ds-shadow-card: 0 1px 2px rgba(9, 30, 66, 0.25);
+  --ds-shadow-raised: 0 1px 1px rgba(9, 30, 66, 0.25), 0 0 1px rgba(9, 30, 66, 0.31);
+  --ds-shadow-overlay: 0 8px 16px rgba(9, 30, 66, 0.25);
+  --ds-shadow-overflow: 0 0 0 1px rgba(9, 30, 66, 0.08), 0 2px 4px 1px rgba(9, 30, 66, 0.08);
+
+  /* 布局尺寸 */
+  --ds-topbar-height: 48px;
+  --ds-sidebar-width: 240px;
+  --ds-sidebar-collapsed-width: 64px;
+
+  /* 字体大小 */
+  --ds-font-size-xs: 11px;
+  --ds-font-size-sm: 12px;
+  --ds-font-size-md: 14px;
+  --ds-font-size-lg: 16px;
+  --ds-font-size-xl: 20px;
+  --ds-font-size-xxl: 24px;
+
+  /* 过渡 */
+  --ds-transition-fast: 0.1s ease;
+  --ds-transition-normal: 0.2s ease;
+  --ds-transition-slow: 0.3s ease;
 }
 
 @theme inline {
@@ -20,7 +106,47 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--ds-bg-page);
+  color: var(--ds-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  font-size: var(--ds-font-size-md);
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* 全局滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--ds-bg-page);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ds-border-default);
+  border-radius: var(--ds-radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ds-text-disabled);
+}
+
+/* 链接默认样式 */
+a {
+  color: var(--ds-text-link);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* 焦点样式 */
+*:focus-visible {
+  outline: 2px solid var(--ds-border-focused);
+  outline-offset: 2px;
 }
